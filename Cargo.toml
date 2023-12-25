@@ -1,0 +1,24 @@
+[package]
+name = "bevy_utility_ai"
+version = "0.0.1"
+edition = "2021"
+authors = ["invokermain"]
+description = "An ECS first Utility AI library for the bevy game engine"
+
+[workspace]
+members = ["macros"]
+
+[dependencies]
+bevy_utility_ai_macros = { path = "macros" }
+bevy = { version = "0.12", default-features = false }
+bevy_egui = { version = "^0.24", optional = true }
+egui_plot = { version = "^0.24", optional = true }
+rand = { version = "^0.8", features = [] }
+
+[features]
+dashboard = ["dep:bevy_egui", "dep:egui_plot"]
+
+[dev-dependencies]
+trybuild = "1"
+# this ensures we have the dashboard features in testsw
+bevy_utility_ai = { path = ".", features = ["dashboard"] }
