@@ -28,14 +28,14 @@ impl Consideration {
         consideration_type: ConsiderationType,
         system_app_config: SystemConfigs,
     ) -> Self {
-        let response_curve = ResponseCurve::Linear(Linear::new(1.0));
+        let response_curve = ResponseCurve::LinearCurve(Linear::new(1.0));
         Self {
             name: format!("{} - {}", input_name, response_curve),
             input,
             input_name,
             consideration_type,
             system_app_config: Some(system_app_config),
-            response_curve: ResponseCurve::Linear(Linear::new(1.0)),
+            response_curve: ResponseCurve::LinearCurve(Linear::new(1.0)),
         }
     }
 

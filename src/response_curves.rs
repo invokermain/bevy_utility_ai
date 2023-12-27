@@ -8,17 +8,17 @@ pub trait InputTransform: Send + Sync + PartialEq {
 
 #[derive(PartialEq)]
 pub enum ResponseCurve {
-    Linear(Linear),
-    Polynomial(Polynomial),
-    Logistic(Logistic),
+    LinearCurve(Linear),
+    PolynomialCurve(Polynomial),
+    LogisticCurve(Logistic),
 }
 
 impl InputTransform for ResponseCurve {
     fn transform(&self, input: f32) -> f32 {
         match self {
-            ResponseCurve::Linear(x) => x.transform(input),
-            ResponseCurve::Polynomial(x) => x.transform(input),
-            ResponseCurve::Logistic(x) => x.transform(input),
+            ResponseCurve::LinearCurve(x) => x.transform(input),
+            ResponseCurve::PolynomialCurve(x) => x.transform(input),
+            ResponseCurve::LogisticCurve(x) => x.transform(input),
         }
     }
 }
@@ -72,14 +72,14 @@ fn write_float(f: &mut Formatter<'_>, val: f32) -> std::fmt::Result {
 impl Display for ResponseCurve {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ResponseCurve::Linear(r) => {
+            ResponseCurve::LinearCurve(r) => {
                 write!(f, "Linear(")?;
                 write_slope(f, r.slope)?;
                 write_x(f, r.x_shift)?;
                 write_y_shift(f, r.y_shift)?;
                 write!(f, ")")
             }
-            ResponseCurve::Polynomial(r) => {
+            ResponseCurve::PolynomialCurve(r) => {
                 write!(f, "Poly(")?;
                 write_slope(f, r.slope)?;
                 write_x(f, r.x_shift)?;
@@ -87,7 +87,7 @@ impl Display for ResponseCurve {
                 write_y_shift(f, r.y_shift)?;
                 write!(f, ")")
             }
-            ResponseCurve::Logistic(r) => {
+            ResponseCurve::LogisticCurve(r) => {
                 write!(f, "Logistic(k=")?;
                 write_float(f, r.k)?;
                 write!(f, ",x_shift=")?;
@@ -102,19 +102,19 @@ impl Display for ResponseCurve {
 
 impl From<Linear> for ResponseCurve {
     fn from(value: Linear) -> Self {
-        Self::Linear(value)
+        Self::LinearCurve(value)
     }
 }
 
 impl From<Polynomial> for ResponseCurve {
     fn from(value: Polynomial) -> Self {
-        Self::Polynomial(value)
+        Self::PolynomialCurve(value)
     }
 }
 
 impl From<Logistic> for ResponseCurve {
     fn from(value: Logistic) -> Self {
-        Self::Logistic(value)
+        Self::LogisticCurve(value)
     }
 }
 

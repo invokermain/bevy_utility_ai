@@ -1,7 +1,9 @@
 
 # bevy_utility_ai
 
-This library provides a Utility AI framework built for bevy.
+This crate provides a Utility AI implementation for the bevy game engine.
+
+## Example
 
 ## Resources
 
@@ -10,3 +12,7 @@ This library provides a Utility AI framework built for bevy.
 ## Components
 
 - AIMeta: A Component which stores all the state required by the various AI systems relating to an Entity.
+
+## Dashboard
+
+## Comparison with Big Brain

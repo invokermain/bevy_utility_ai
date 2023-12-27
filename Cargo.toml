@@ -22,3 +22,4 @@ dashboard = ["dep:bevy_egui", "dep:egui_plot"]
 trybuild = "1"
 # this ensures we have the dashboard features in testsw
 bevy_utility_ai = { path = ".", features = ["dashboard"] }
+bevy = { version = "*"}
