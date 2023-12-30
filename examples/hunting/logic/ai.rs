@@ -10,11 +10,14 @@ use bevy_utility_ai_macros::{input_system, targeted_input_system};
 
 // Define simple input system, this input is calculated for each entity that has the
 // required components.
+
+/// How much energy we have on a scale of 0.0 to 1.0
 #[input_system]
 fn energy(energy: &Energy) -> f32 {
     energy.value / energy.max
 }
 
+/// How hungry we are on a scale of 0.0 to 1.0
 #[input_system]
 fn hunger(hunger: &Hunger) -> f32 {
     hunger.value / hunger.max
@@ -22,6 +25,8 @@ fn hunger(hunger: &Hunger) -> f32 {
 
 // Define targeted input systems, these are calculated for every combination of entity and
 // target entity that match the required components.
+
+/// Distance to the target
 #[targeted_input_system]
 fn distance_to(subject: (&Transform,), target: (&Transform,)) -> f32 {
     let subject_pos = subject.0.translation;
@@ -61,19 +66,22 @@ pub(crate) fn construct_hunter_ai(app: &mut App) {
     // use DefineAI to build a set of decisions that will be ran for any entity with
     // the HunterAI marker component added.
     DefineAI::<HunterAI>::new()
+        // Add some intertia to our decisions so that we do not oscillate between
+        // decisions.
+        .set_default_intertia(0.1)
         .add_decision(
             // Rest..
             Decision::simple::<ActionRest>()
                 // if we have low energy
                 .add_consideration(
                     Consideration::simple(energy).with_response_curve(
-                        Polynomial::new(-0.5, 3.0).shifted(1.0, 0.0),
+                        Polynomial::new(-0.5, 3.0).shifted(0.0, 1.0),
                     ),
                 )
                 // and we have low hunger
                 .add_consideration(
                     Consideration::simple(hunger).with_response_curve(
-                        Polynomial::new(-0.5, 3.0).shifted(1.0, 0.0),
+                        Polynomial::new(-0.5, 3.0).shifted(0.0, 1.0),
                     ),
                 ),
         )
@@ -111,12 +119,12 @@ pub(crate) fn construct_hunter_ai(app: &mut App) {
                 // & prefer if we are hungry
                 .add_consideration(
                     Consideration::simple(hunger)
-                        .with_response_curve(Polynomial::new(1.0, 0.25)),
+                        .with_response_curve(Linear::new(1.5)),
                 ),
         )
         .add_decision(
             // Idle...
-            Decision::simple::<ActionIdle>().set_base_score(0.2),
+            Decision::simple::<ActionIdle>().set_base_score(0.25),
         )
         // registering against the app adds the input systems and actions we have used for
         // us. But it does not add any action systems as it has no awareness of them.

@@ -30,6 +30,7 @@ pub struct DefineAI<T: Component> {
     targeted_inputs: HashMap<TypeId, TargetedInputRequirements>,
     /// A vec of all actions defined as part of this AI, will be registered to the App.
     action_type_registrations: Vec<TypeRegistration>,
+    default_intertia: f32,
     marker_phantom: PhantomData<T>,
     schedule_label: Option<InternedScheduleLabel>,
 }
@@ -44,6 +45,7 @@ impl<T: Component> DefineAI<T> {
             targeted_inputs: HashMap::new(),
             action_type_registrations: Vec::new(),
             schedule_label: None,
+            default_intertia: 0.0,
         }
     }
 
@@ -83,6 +85,14 @@ impl<T: Component> DefineAI<T> {
 
     pub fn use_schedule(mut self, schedule: impl ScheduleLabel) -> DefineAI<T> {
         self.schedule_label = Some(schedule.intern());
+        self
+    }
+
+    pub fn set_default_intertia(mut self, value: f32) -> DefineAI<T> {
+        if !(0.0..1.0).contains(&value) {
+            panic!("value must be between =0.0 and 1.0");
+        }
+        self.default_intertia = value;
         self
     }
 
@@ -147,6 +157,7 @@ impl<T: Component> DefineAI<T> {
                 decisions: self.decisions,
                 simple_inputs: self.simple_inputs,
                 targeted_inputs: self.targeted_inputs,
+                default_intertia: self.default_intertia
             };
             ai_definitions
                 .map

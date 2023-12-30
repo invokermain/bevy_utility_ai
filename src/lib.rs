@@ -53,6 +53,8 @@ pub struct AIDefinition {
     pub name: String,
     /// The type id of the Marker Component associated with this definition
     pub marker_type: TypeId,
+    /// The default value to use for the intertia of a decision if unspecified
+    pub default_intertia: f32,
     /// The decisions that make up this AIDefinition
     pub decisions: Vec<Decision>,
     /// The simple inputs used for this AI, passed to AIDefinition on register.

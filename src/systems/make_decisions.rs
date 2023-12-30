@@ -8,7 +8,7 @@ use crate::{AIDefinitions, AIMeta, Decision};
 use bevy::ecs::archetype::{Archetype, Archetypes};
 use bevy::ecs::component::Components;
 use bevy::ecs::entity::Entities;
-use bevy::log::{debug, debug_span};
+use bevy::log::{debug, debug_span, warn};
 use bevy::prelude::{Entity, Event, EventWriter, Query, Res};
 use bevy::utils::HashMap;
 
@@ -70,10 +70,14 @@ pub(crate) fn make_decisions_sys(
                         consideration.name
                     );
                 } else {
-                    let consideration_score = consideration
+                    let mut consideration_score = consideration
                         .response_curve
                         .transform(consideration_input_score)
                         .clamp(0.0, 1.0);
+                    if consideration_score.is_nan() {
+                        warn!("response curve returned NaN for input {:.2}", consideration_input_score);
+                        consideration_score = 0.0;
+                    }
                     debug!(
                         "Consideration '{}' scored: {:.2} (raw {:.2})",
                         consideration.name,
@@ -214,17 +218,18 @@ pub(crate) fn make_decisions_sys(
             .position(|decision| Some(decision.action) == ai_meta.current_action);
 
         if let Some(current_decision_idx) = current_decision_idx {
-            let intertia = ai_definition.decisions[current_decision_idx].intertia;
-            if intertia >= 0.0 {
-                if let Some((_, _, mut score)) =
+            let decision_inertia = ai_definition.decisions[current_decision_idx].intertia;
+            let inertia = decision_inertia.unwrap_or(ai_definition.default_intertia);
+            if inertia >= 0.0 {
+                if let Some(index) =
                     evaluated_decisions
                         .iter_mut()
-                        .find(|(decision_idx, target, _)| {
+                        .position(|(decision_idx, target, _)| {
                             decision_idx == &current_decision_idx
                                 && target == &ai_meta.current_target
                         })
                 {
-                    score += intertia;
+                    evaluated_decisions[index].2 += inertia;
                 }
             };
         }

@@ -33,7 +33,7 @@ pub struct Decision {
     pub(crate) base_score: f32,
     pub(crate) subject_filters: Vec<Filter>,
     pub(crate) target_filters: Vec<Filter>,
-    pub(crate) intertia: f32,
+    pub(crate) intertia: Option<f32>,
 }
 
 fn gen_random_tag() -> String {
@@ -59,7 +59,7 @@ impl Decision {
             considerations: Vec::new(),
             subject_filters: Vec::new(),
             target_filters: Vec::new(),
-            intertia: 0.0,
+            intertia: None,
         }
     }
 
@@ -133,10 +133,10 @@ impl Decision {
     /// the decision's current utility when it is active to prevent an agent from
     /// oscillating between two similarly weighted choices.
     pub fn set_intertia(mut self, intertia: f32) -> Self {
-        if !(0.0..=1.0).contains(&intertia) {
+        if !(0.0..1.0).contains(&intertia) {
             panic!("intertia must be between 0.0 and 1.0");
         }
-        self.intertia = intertia;
+        self.intertia = Some(intertia);
         self
     }
 
