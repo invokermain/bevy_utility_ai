@@ -1,7 +1,7 @@
 use crate::considerations::ConsiderationType;
 use crate::decisions::Decision;
-use crate::plugin::{UtililityAISet, UtilityAISettings};
-use crate::systems::ensure_entity_has_ai_meta;
+use crate::plugin::{UtilityAISet, UtilityAISettings};
+use crate::systems::{ensure_entity_has_ai_meta, handle_ai_marker_removed};
 use crate::{AIDefinition, AIDefinitions, FilterDefinition, TargetedInputRequirements};
 use bevy::ecs::schedule::{InternedScheduleLabel, ScheduleLabel};
 
@@ -103,7 +103,13 @@ impl<T: Component> DefineAI<T> {
                 .schedule_label
                 .unwrap_or(app.world.resource::<UtilityAISettings>().default_schedule);
 
-            app.add_systems(schedule_label, ensure_entity_has_ai_meta::<T>);
+            app.add_systems(
+                schedule_label,
+                (
+                    ensure_entity_has_ai_meta::<T>,
+                    handle_ai_marker_removed::<T>,
+                ),
+            );
 
             // Add utility systems
             for decision in &mut self.decisions {
@@ -112,7 +118,7 @@ impl<T: Component> DefineAI<T> {
                     if !added_systems.systems.contains(&c.input) {
                         app.add_systems(
                             schedule_label,
-                            system_app_config.in_set(UtililityAISet::CalculateInputs),
+                            system_app_config.in_set(UtilityAISet::CalculateInputs),
                         );
                         added_systems.systems.insert(c.input);
                     }

@@ -20,12 +20,7 @@ pub(crate) struct DashboardState {
 
 impl DashboardState {
     pub(crate) fn reset(&mut self, dashboard_data: &DashboardData) {
-        self.selected_ai_definition = dashboard_data
-            .ai_definitions
-            .iter()
-            .next()
-            .as_deref()
-            .cloned();
+        self.selected_ai_definition = dashboard_data.ai_definitions.get(0).cloned();
     }
 }
 

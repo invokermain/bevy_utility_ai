@@ -1,31 +1,51 @@
-mod ai;
-mod components;
-mod systems;
+mod camera;
+mod logic;
+mod ui;
 
-use crate::ai::{construct_hunter_ai, ActionHunt, ActionRest, HunterAI};
-use crate::components::Energy;
-use crate::systems::{hunt, rest};
-use bevy::app::ScheduleRunnerPlugin;
-use bevy::core_pipeline::clear_color::ClearColorConfig;
-use bevy::gizmos::GizmoPlugin;
+use crate::logic::ai::{construct_hunter_ai, HunterAI, PreyAI};
+use crate::logic::components::Energy;
+use crate::logic::food::{despawn_empty_food, eat, increase_hunger, spawn_food, Hunger};
+use crate::logic::hunt::PreyKilledEvent;
+use crate::ui::action_text_update_system;
+use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
-use bevy::render::camera::{ScalingMode, Viewport};
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::WindowResolution;
-use bevy_utility_ai::plugin::UtilityAIPlugin;
+use bevy_egui::EguiPlugin;
+use bevy_utility_ai::dashboard::UtilityAIDashboardPlugin;
+use bevy_utility_ai::plugin::{UtilityAIPlugin, UtilityAISet};
+use bevy_utility_ai::systems::make_decisions::EntityActionChangedEvent;
+use camera::{mouse_control, scroll_zoom};
+use logic::hunt::hunt;
+use logic::rest::{idle, rest};
+use rand::Rng;
 use std::time::Duration;
+use ui::{
+    energy_text_update_system, fps_text_update_system, hunger_text_update_system,
+    setup_fps_counter,
+};
+
+// This system listens to EntityActionChangedEvent events and logs them to give us some
+// visibility.
+fn log_ai_updated_action(mut e_update_action: EventReader<EntityActionChangedEvent>) {
+    for event in e_update_action.read() {
+        info!(
+            "entity {:?} | decided {} | target {:?} | score {:.2}",
+            event.entity_id, event.new_action, event.new_target, event.new_score,
+        )
+    }
+}
 
 fn main() {
     let mut app = App::new();
 
     // Setup the App
     app.add_plugins((
-        ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(1.0)),
         DefaultPlugins
             .set(LogPlugin {
                 // can change bevy_utility_ai to debug to see whats happening under the hood
-                filter: "warn,bevy_utility_ai=info".into(),
+                filter: "warn,bevy_utility_ai=info,hunting=info".into(),
                 level: bevy::log::Level::INFO,
             })
             .set(WindowPlugin {
@@ -37,63 +57,119 @@ fn main() {
                 }),
                 ..default()
             }),
+        FrameTimeDiagnosticsPlugin,
     ));
 
-    app.add_systems(Startup, setup);
+    // Setup the camera, ui and other game systems
+    app.add_systems(Startup, (camera::setup_camera, setup_fps_counter));
+    app.add_systems(
+        Update,
+        (
+            mouse_control,
+            scroll_zoom,
+            fps_text_update_system,
+            action_text_update_system,
+            hunger_text_update_system,
+            energy_text_update_system,
+        ),
+    );
 
-    // Add our plugin
-    app.add_plugins(UtilityAIPlugin::new(Update));
+    // Add some logging observability, we use the UpdateActions system set to ensure
+    // that is runs after any decisions have been made.
+    app.add_systems(
+        Update,
+        log_ai_updated_action.in_set(UtilityAISet::UpdateActions),
+    );
 
-    // Register our actions
-    app.register_type::<ActionHunt>();
-    app.register_type::<ActionRest>();
+    // So we don't have to deal with time deltas in this example use a fixed timestep for
+    // our systems. In general there is no need for the Utility AI systems to run every
+    // tick.
+    app.insert_resource(Time::<Fixed>::from_duration(Duration::from_secs_f64(0.1)));
+
+    // Add the Utility AI plugins
+    app.add_plugins((
+        UtilityAIPlugin::new(FixedUpdate),
+        EguiPlugin,
+        UtilityAIDashboardPlugin,
+    ));
 
     // Add our AI logic
     construct_hunter_ai(&mut app);
 
-    // Add our Action systems
-    app.add_systems(Update, (hunt, rest));
+    // Add our game systems
+    app.add_systems(
+        FixedUpdate,
+        (
+            hunt,
+            rest,
+            increase_hunger,
+            spawn_food,
+            despawn_empty_food,
+            eat,
+            idle,
+        ),
+    );
 
-    // Spawn our hunter
-    app.world.spawn((
-        HunterAI {},
-        Energy {
-            value: 100.0,
-            max: 100.0,
-        },
-    ));
+    // Spawn some entities
+    app.add_systems(Startup, worldgen);
+
+    // Register our events
+    app.add_event::<PreyKilledEvent>();
 
     app.run()
 }
 
-fn setup(
+fn worldgen(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut gizmos: Gizmos,
 ) {
-    // Camera
-    commands.spawn(Camera2dBundle {
-        camera_2d: Camera2d {
-            clear_color: ClearColorConfig::Custom(Color::LIME_GREEN),
-        },
-        projection: OrthographicProjection {
-            scaling_mode: ScalingMode::Fixed { width: 255., height: 255. },
+    // Spawn some prey
+    let prey_material = materials.add(ColorMaterial::from(Color::PURPLE));
+    let pixel_mesh = meshes.add(shape::Box::new(5., 5., 0.).into());
+
+    let mut rng = rand::thread_rng();
+
+    commands.spawn_batch(
+        (0..10)
+            .map(|_| {
+                (
+                    MaterialMesh2dBundle {
+                        mesh: pixel_mesh.clone().into(),
+                        material: prey_material.clone(),
+                        transform: Transform::from_translation(Vec3::new(
+                            rng.gen_range(-1000.0..=1000.0),
+                            rng.gen_range(-1000.0..=1000.0),
+                            0.,
+                        )),
+                        ..default()
+                    },
+                    Energy {
+                        value: 100.,
+                        max: 100.,
+                    },
+                    PreyAI {},
+                )
+            })
+            .collect::<Vec<_>>(),
+    );
+
+    // Spawn our hunter
+    commands.spawn((
+        MaterialMesh2dBundle {
+            mesh: pixel_mesh.clone().into(),
+            material: materials.add(ColorMaterial::from(Color::WHITE)),
+            transform: Transform::from_translation(Vec3::Z),
             ..default()
         },
-        transform: Transform::from_xyz(127.5, 127.5, 0.),
-        ..default()
-    });
-
-    println!("{:?}", Camera2dBundle::default().projection.area);
-
-    gizmos.line_2d(Vec2::ZERO, Vec2::new(255., 255.), Color::BLUE);
-
-    // Spawn some prey
-    commands.spawn_batch(vec![MaterialMesh2dBundle {
-        mesh: meshes.add(shape::Circle::new(5.).into()).into(),
-        material: materials.add(ColorMaterial::from(Color::PURPLE)),
-        transform: Transform::from_translation(Vec3::new(0., 0., 0.)),
-        ..default()
-    }]);
+        Energy {
+            value: 100.0,
+            max: 100.0,
+        },
+        HunterAI {}, // this component enables the HunterAI behaviour
+        Hunger {
+            value: 50.0,
+            max: 100.0,
+        },
+    ));
 }

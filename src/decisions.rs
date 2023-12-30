@@ -33,6 +33,7 @@ pub struct Decision {
     pub(crate) base_score: f32,
     pub(crate) subject_filters: Vec<Filter>,
     pub(crate) target_filters: Vec<Filter>,
+    pub(crate) intertia: f32,
 }
 
 fn gen_random_tag() -> String {
@@ -58,6 +59,7 @@ impl Decision {
             considerations: Vec::new(),
             subject_filters: Vec::new(),
             target_filters: Vec::new(),
+            intertia: 0.0,
         }
     }
 
@@ -70,7 +72,8 @@ impl Decision {
     }
 
     pub fn add_consideration(mut self, consideration: Consideration) -> Self {
-        if !self.is_targeted && consideration.consideration_type == ConsiderationType::Targeted
+        if !self.is_targeted
+            && consideration.consideration_type == ConsiderationType::Targeted
         {
             panic!(
                 "Cannot add targeted consideration '{}' to simple decision '{}'!",
@@ -113,16 +116,27 @@ impl Decision {
         self
     }
 
-    /// Set the base score for this decision. The base score is the initial value that gets
-    /// multiplied cumulatively by each consideration. The default base score is 1.0.
-    /// This can be used to either create a fallback decision with no considerations, so that the AI
-    /// does something appropriate when there is no good decision to make.
+    /// Set the base score for this decision. The base score is the initial value that
+    /// gets multiplied cumulatively by each consideration. The default base score is 1.0.
+    /// This can be used to either create a fallback decision with no considerations, so
+    /// that the AI does something appropriate when there is no good decision to make.
     /// This can also be used to weight decisions at the decision level.
     pub fn set_base_score(mut self, score: f32) -> Self {
         if score <= 0.0 || score >= 10.0 {
             panic!("base_score must be between 0.0 and 10.0");
         }
         self.base_score = score;
+        self
+    }
+
+    /// Sets the inertia for this decision which is by default 0. Intertia is 'added' to
+    /// the decision's current utility when it is active to prevent an agent from
+    /// oscillating between two similarly weighted choices.
+    pub fn set_intertia(mut self, intertia: f32) -> Self {
+        if !(0.0..=1.0).contains(&intertia) {
+            panic!("intertia must be between 0.0 and 1.0");
+        }
+        self.intertia = intertia;
         self
     }
 

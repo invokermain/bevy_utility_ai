@@ -200,7 +200,8 @@ fn simple_considerations_respects_subject_filter() {
         .add_decision(
             Decision::simple::<ActionOne>()
                 .add_consideration(
-                    Consideration::simple(utility_input_low).with_name("utility_input_low"),
+                    Consideration::simple(utility_input_low)
+                        .with_name("utility_input_low"),
                 )
                 .subject_filter_include::<AA>(),
         )
@@ -234,7 +235,8 @@ fn simple_considerations_respects_subject_filter_two() {
         .add_decision(
             Decision::simple::<ActionOne>()
                 .add_consideration(
-                    Consideration::simple(utility_input_low).with_name("utility_input_low"),
+                    Consideration::simple(utility_input_low)
+                        .with_name("utility_input_low"),
                 )
                 .subject_filter_include::<AA>(),
         )
@@ -475,6 +477,77 @@ fn calculate_targeted_inputs_respects_filters_complex() {
     assert_eq!(scores.len(), 2);
     assert!(scores.contains_key(&entity_target));
     assert!(scores.contains_key(&entity_target_2));
+}
+
+/// This test checks that the framework correctly handles target filters when inputs overlap.
+#[test]
+fn calculate_targeted_inputs_respects_filters_overlap() {
+    // SETUP
+    #[targeted_input_system]
+    fn targeted_utility_input_1(subject: (&Position,), target: (&Position,)) -> f32 {
+        subject.0.val.distance(target.0.val)
+    }
+    let mut app = test_app();
+    app.add_plugins(UtilityAIPlugin::default());
+
+    DefineAI::<AI1>::new()
+        .add_decision(
+            Decision::targeted::<ActionOne>()
+                .add_consideration(
+                    // will always be scored at 0.0
+                    Consideration::targeted(targeted_utility_input_1)
+                        .with_response_curve(Linear::new(0.0).shifted(0.0, 0.0))
+                        .with_name("targeted_utility_input_1"),
+                )
+                .target_filter_include::<AA>(),
+        )
+        .add_decision(
+            Decision::targeted::<ActionTwo>()
+                .add_consideration(
+                    Consideration::targeted(targeted_utility_input_1)
+                        .with_response_curve(Linear::new(0.1))
+                        .with_name("targeted_utility_input_1"),
+                )
+                .target_filter_include::<BB>(),
+        )
+        .register(&mut app);
+
+    let entity_subject = app
+        .world
+        .spawn((
+            Position {
+                val: Vec2::new(1.0, 1.0),
+            },
+            AI1 {},
+            AIMeta::new::<AI1>(),
+        ))
+        .id();
+    let _wrong_target = app
+        .world
+        .spawn((
+            Position {
+                val: Vec2::new(-1.0, -1.0),
+            },
+            AA {},
+        ))
+        .id();
+    let correct_target = app
+        .world
+        .spawn((
+            Position {
+                val: Vec2::new(0.5, 0.5),
+            },
+            BB {},
+        ))
+        .id();
+
+    app.update();
+
+    // Assert that the only score calculated is for entity_target
+    let ai_meta = app.world.get::<AIMeta>(entity_subject).unwrap();
+
+    assert_eq!(ai_meta.current_action, Some(TypeId::of::<ActionTwo>()));
+    assert_eq!(ai_meta.current_target, Some(correct_target));
 }
 
 /// Test that we can add a systems that have a single extra arg

@@ -5,7 +5,7 @@ use crate::dashboard::data::{
 use crate::dashboard::view;
 use crate::dashboard::view::DashboardState;
 use bevy::app::{App, Plugin, PreUpdate, Startup};
-use bevy::prelude::{Commands, Component, IVec2, Update, Window, WindowPosition};
+use bevy::prelude::{default, Commands, Component, Update, Window};
 use bevy::window::WindowResolution;
 
 pub struct UtilityAIDashboardPlugin;
@@ -31,19 +31,12 @@ impl Plugin for UtilityAIDashboardPlugin {
     }
 }
 
-const SCREEN_WIDTH: usize = 2560;
-const SCREEN_HEIGHT: usize = 1300;
-
 fn create_new_window_system(mut commands: Commands) {
     commands.spawn((
         Window {
             title: "UtilityAI Dashboard".to_owned(),
-            position: WindowPosition::new(IVec2::new(SCREEN_WIDTH as i32 / 2, 0)),
-            resolution: WindowResolution::new(
-                SCREEN_WIDTH as f32 / 2.0,
-                SCREEN_HEIGHT as f32 / 2.0,
-            ),
-            ..Default::default()
+            resolution: WindowResolution::new(1024., 720.), // need a better way
+            ..default()
         },
         UtilityAIDashboardWindow,
     ));

@@ -10,7 +10,7 @@ use bevy::ecs::schedule::{InternedScheduleLabel, ScheduleLabel};
 use bevy::prelude::{IntoSystemConfigs, IntoSystemSetConfigs, Plugin, Resource, SystemSet};
 
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
-pub enum UtililityAISet {
+pub enum UtilityAISet {
     CalculateInputs,
     MakeDecisions,
     UpdateActions,
@@ -53,15 +53,15 @@ impl Plugin for UtilityAIPlugin {
             .add_systems(
                 self.schedule,
                 (
-                    make_decisions_sys.in_set(UtililityAISet::MakeDecisions),
-                    update_actions_sys.in_set(UtililityAISet::UpdateActions),
+                    make_decisions_sys.in_set(UtilityAISet::MakeDecisions),
+                    update_actions_sys.in_set(UtilityAISet::UpdateActions),
                 ),
             )
             .configure_sets(
                 self.schedule,
                 (
-                    UtililityAISet::CalculateInputs.before(UtililityAISet::MakeDecisions),
-                    UtililityAISet::MakeDecisions.before(UtililityAISet::UpdateActions),
+                    UtilityAISet::CalculateInputs.before(UtilityAISet::MakeDecisions),
+                    UtilityAISet::MakeDecisions.before(UtilityAISet::UpdateActions),
                 ),
             );
 

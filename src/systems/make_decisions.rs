@@ -5,6 +5,9 @@ use crate::events::{ConsiderationCalculatedEvent, DecisionCalculatedEvent};
 use crate::response_curves::InputTransform;
 use crate::systems::update_action::UpdateEntityActionInternalEvent;
 use crate::{AIDefinitions, AIMeta, Decision};
+use bevy::ecs::archetype::{Archetype, Archetypes};
+use bevy::ecs::component::Components;
+use bevy::ecs::entity::Entities;
 use bevy::log::{debug, debug_span};
 use bevy::prelude::{Entity, Event, EventWriter, Query, Res};
 use bevy::utils::HashMap;
@@ -16,11 +19,13 @@ pub(crate) fn make_decisions_sys(
     #[cfg(debug_assertions)] mut ew_consideration_calculated: EventWriter<
         ConsiderationCalculatedEvent,
     >,
-    #[cfg(debug_assertions)] mut ew_decision_calculated: EventWriter<DecisionCalculatedEvent>,
+    #[cfg(debug_assertions)] mut ew_decision_calculated: EventWriter<
+        DecisionCalculatedEvent,
+    >,
     ai_definitions: Res<AIDefinitions>,
-    archetypes: &bevy::ecs::archetype::Archetypes,
-    entities: &bevy::ecs::entity::Entities,
-    components: &bevy::ecs::component::Components,
+    archetypes: &Archetypes,
+    entities: &Entities,
+    components: &Components,
 ) {
     let _span = debug_span!("Making Decisions").entered();
 
@@ -35,24 +40,10 @@ pub(crate) fn make_decisions_sys(
         let mut evaluated_decisions = Vec::new();
 
         for (idx, decision) in ai_definition.decisions.iter().enumerate() {
-            let span = debug_span!("evaluating", name = decision.name);
-            let _span = span.enter();
+            let _span = debug_span!("evaluating", name = decision.name).entered();
 
-            let matches_filter = decision.subject_filters.iter().all(|component_filter| {
-                if let Some(component) =
-                    components.get_id(component_filter.component_type_id())
-                {
-                    match component_filter {
-                        Filter::Inclusive(_) => entity_archetype.contains(component),
-                        Filter::Exclusive(_) => !entity_archetype.contains(component),
-                    }
-                } else {
-                    // Component hasn't even been registered with the app
-                    match component_filter {
-                        Filter::Inclusive(_) => false,
-                        Filter::Exclusive(_) => true,
-                    }
-                }
+            let matches_filter = decision.subject_filters.iter().all(|filter| {
+                entity_matches_component_filter(filter, entity_archetype, components)
             });
 
             if !matches_filter {
@@ -85,7 +76,9 @@ pub(crate) fn make_decisions_sys(
                         .clamp(0.0, 1.0);
                     debug!(
                         "Consideration '{}' scored: {:.2} (raw {:.2})",
-                        consideration.name, consideration_score, consideration_input_score
+                        consideration.name,
+                        consideration_score,
+                        consideration_input_score
                     );
 
                     #[cfg(debug_assertions)]
@@ -131,7 +124,31 @@ pub(crate) fn make_decisions_sys(
                     );
                     continue;
                 };
-                for (&target_entity, &consideration_input_score) in score_map.unwrap() {
+                let score_map = score_map.unwrap();
+                let mut defunct_entities = Vec::new();
+                debug!("{:?}", score_map);
+                for (&target_entity_id, &consideration_input_score) in score_map {
+                    let _span = debug_span!("", target_entity = target_entity_id.index())
+                        .entered();
+
+                    let target_entity = entities.get(target_entity_id);
+                    if target_entity.is_none() {
+                        defunct_entities.push(target_entity_id);
+                        continue;
+                    }
+                    let target_entity_archetype =
+                        archetypes.get(target_entity.unwrap().archetype_id).unwrap();
+                    let matches_filter = decision.target_filters.iter().all(|filter| {
+                        entity_matches_component_filter(
+                            filter,
+                            target_entity_archetype,
+                            components,
+                        )
+                    });
+                    if !matches_filter {
+                        debug!("Skipped as target entity does not match target_filter");
+                        continue;
+                    }
                     let consideration_score = consideration
                         .response_curve
                         .transform(consideration_input_score)
@@ -139,7 +156,7 @@ pub(crate) fn make_decisions_sys(
                     debug!(
                         "Consideration '{}' for entity {:?} scored: {:.2} (raw {:.2})",
                         consideration.name,
-                        target_entity,
+                        target_entity_id,
                         consideration_score,
                         consideration_input_score
                     );
@@ -149,13 +166,22 @@ pub(crate) fn make_decisions_sys(
                         entity: entity_id,
                         decision: decision.name.clone(),
                         consideration_name: consideration.name.clone(),
-                        target: Some(target_entity),
+                        target: Some(target_entity_id),
                         score: consideration_score,
                     });
 
                     *targeted_scores
-                        .entry(target_entity)
+                        .entry(target_entity_id)
                         .or_insert(decision_score) *= consideration_score;
+                }
+
+                // Tidy up despawned entities
+                for defunct_entity in &defunct_entities {
+                    let score_map = ai_meta
+                        .targeted_input_scores
+                        .get_mut(&consideration.input)
+                        .unwrap();
+                    score_map.remove(defunct_entity);
                 }
             }
 
@@ -181,14 +207,35 @@ pub(crate) fn make_decisions_sys(
             continue;
         }
 
+        // add inertia to current active decision
+        let current_decision_idx = ai_definition
+            .decisions
+            .iter()
+            .position(|decision| Some(decision.action) == ai_meta.current_action);
+
+        if let Some(current_decision_idx) = current_decision_idx {
+            let intertia = ai_definition.decisions[current_decision_idx].intertia;
+            if intertia >= 0.0 {
+                if let Some((_, _, mut score)) =
+                    evaluated_decisions
+                        .iter_mut()
+                        .find(|(decision_idx, target, _)| {
+                            decision_idx == &current_decision_idx
+                                && target == &ai_meta.current_target
+                        })
+                {
+                    score += intertia;
+                }
+            };
+        }
+
         // pick best decision
         evaluated_decisions.sort_by(|a, b| b.2.total_cmp(&a.2));
-
         let (decision_idx, target, score) = evaluated_decisions.first().unwrap();
+
         let Decision {
             action_name,
             action,
-            is_targeted,
             ..
         } = &ai_definition.decisions[*decision_idx];
 
@@ -196,48 +243,12 @@ pub(crate) fn make_decisions_sys(
         let keep_current_target = *target == ai_meta.current_target;
 
         if keep_current_action && keep_current_target {
-            // Scenario 1: Same Action, keep same target (which can be None)
-            if *is_targeted {
-                debug!(
-                    "Keeping same action '{}' targeting {:?} with score {:.2}",
-                    action_name, target, score
-                );
-            } else {
-                debug!(
-                    "Keeping same action '{}' with score {:.2}",
-                    action_name, score
-                );
-            }
             ai_meta.current_action_score = *score;
             continue;
         } else {
-            if !keep_current_action {
-                // Scenario 3: New action
-                if *is_targeted {
-                    debug!(
-                        "Switching to new action '{}' targeting {:?} with score {:.2}",
-                        action_name, target, score
-                    );
-                } else {
-                    debug!(
-                        "Switching to new action '{}' with score {:.2}",
-                        action_name, score
-                    );
-                }
-            } else if !keep_current_target {
-                // Scenario 2:  Same Action (targeted), switch to new target
-                debug_assert!(is_targeted, "This Action {} isn't targeted", action_name);
-                debug!(
-                    "Keeping Action {} but switching target to {:?} with score {:.2}",
-                    action_name, target, score
-                );
-            } else {
-                panic!("How did we get here?");
-            }
-
             // Change our current action, we do this in another system as it will
             // unfortunately require mut World access so isn't parallelisable.
-            // TODO: this might be refactored to use EntityCommands at some point
+            // TODO: this could be refactored to use EntityCommands at some point
             ew_update_entity_action.send(UpdateEntityActionInternalEvent {
                 entity_id,
                 old_action: ai_meta.current_action,
@@ -260,6 +271,25 @@ pub(crate) fn make_decisions_sys(
             ai_meta.current_action_name = action_name.clone();
             ai_meta.current_action_score = *score;
             ai_meta.current_target = *target;
+        }
+    }
+}
+
+fn entity_matches_component_filter(
+    component_filter: &Filter,
+    archetype: &Archetype,
+    components: &Components,
+) -> bool {
+    if let Some(component) = components.get_id(component_filter.component_type_id()) {
+        match component_filter {
+            Filter::Inclusive(_) => archetype.contains(component),
+            Filter::Exclusive(_) => !archetype.contains(component),
+        }
+    } else {
+        // Component hasn't even been registered with the app
+        match component_filter {
+            Filter::Inclusive(_) => false,
+            Filter::Exclusive(_) => true,
         }
     }
 }
