@@ -1,15 +1,18 @@
-use crate::logic::ai::ActionRest;
-use crate::logic::components::Energy;
+use crate::logic::ai::actions::{ActionIdle, ActionRest};
 use bevy::math::Vec3;
-use bevy::prelude::{Query, With};
+use bevy::prelude::{Component, Query, With};
 use bevy::transform::components::Transform;
 use rand::Rng;
 
-use super::ai::ActionIdle;
+#[derive(Component)]
+pub struct Energy {
+    pub value: f32,
+    pub max: f32,
+}
 
 pub fn rest(mut q_energy: Query<&mut Energy, With<ActionRest>>) {
     for mut energy in q_energy.iter_mut() {
-        energy.value += 1.0;
+        energy.value += 0.50;
         if energy.value >= energy.max {
             energy.value = energy.max
         }

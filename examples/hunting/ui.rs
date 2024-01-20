@@ -1,6 +1,7 @@
-use crate::logic::ai::HunterAI;
-use crate::logic::components::Energy;
+use crate::logic::ai::hunter::HunterAI;
 use crate::logic::food::Hunger;
+use crate::logic::rest::Energy;
+use crate::logic::water::Thirst;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::hierarchy::BuildChildren;
 use bevy::prelude::*;
@@ -21,6 +22,9 @@ pub struct HungerText;
 
 #[derive(Component)]
 pub struct EnergyText;
+
+#[derive(Component)]
+pub struct ThirstText;
 
 pub fn setup_fps_counter(mut commands: Commands) {
     let default_text_style = TextStyle {
@@ -85,7 +89,17 @@ pub fn setup_fps_counter(mut commands: Commands) {
         .spawn((
             EnergyText,
             TextBundle {
-                text: Text::from_section("Energy: N/A", default_text_style),
+                text: Text::from_section("Energy: N/A", default_text_style.clone()),
+                ..default()
+            },
+        ))
+        .id();
+
+    let text_thirst = commands
+        .spawn((
+            ThirstText,
+            TextBundle {
+                text: Text::from_section("Thirst: N/A", default_text_style),
                 ..default()
             },
         ))
@@ -96,6 +110,7 @@ pub fn setup_fps_counter(mut commands: Commands) {
         text_action,
         text_hunger,
         text_energy,
+        text_thirst,
     ]);
 }
 
@@ -129,6 +144,7 @@ pub fn action_text_update_system(
                     "ActionRest" => "Resting",
                     "ActionEat" => "Eating",
                     "ActionIdle" => "Idling",
+                    "ActionDrink" => "Drinking",
                     _ => action_name,
                 };
                 text.sections[0].value = format!("Action: {action_text}");
@@ -161,4 +177,39 @@ pub fn energy_text_update_system(
             text.sections[0].value = format!("Energy: {value:.0}%");
         }
     }
+}
+
+pub fn thirst_text_update_system(
+    q_hunter: Query<&Thirst, With<HunterAI>>,
+    mut q_text: Query<&mut Text, With<ThirstText>>,
+) {
+    if let Ok(thirst) = q_hunter.get_single() {
+        for mut text in &mut q_text {
+            let value = 100.0 * thirst.value / thirst.max;
+            text.sections[0].value = format!("Thirst: {value:.0}%");
+        }
+    }
+}
+
+pub fn draw_fence(mut gizmos: Gizmos) {
+    gizmos.line_2d(
+        Vec2::new(-1000.0, -1000.0),
+        Vec2::new(-1000.0, 1000.0),
+        Color::BLACK,
+    );
+    gizmos.line_2d(
+        Vec2::new(-1000.0, 1000.0),
+        Vec2::new(1000.0, 1000.0),
+        Color::BLACK,
+    );
+    gizmos.line_2d(
+        Vec2::new(1000.0, 1000.0),
+        Vec2::new(1000.0, -1000.0),
+        Color::BLACK,
+    );
+    gizmos.line_2d(
+        Vec2::new(1000.0, -1000.0),
+        Vec2::new(-1000.0, -1000.0),
+        Color::BLACK,
+    );
 }

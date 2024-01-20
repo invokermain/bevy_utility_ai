@@ -33,7 +33,10 @@ fn simple_targeted_input_system_produces_valid_system() {
 #[test]
 fn simple_targeted_input_system_with_resource_produces_valid_system() {
     #[targeted_input_system]
-    fn simple_targeted_input_with_resource(target: (&SomeData,), _r_time: Res<Time>) -> f32 {
+    fn simple_targeted_input_with_resource(
+        target: (&SomeData,),
+        _r_time: Res<Time>,
+    ) -> f32 {
         target.0.val
     }
 
@@ -93,6 +96,7 @@ fn trivial_targeted_input_system_updates_aimeta_inputs() {
                     target_filter: FilterDefinition::Any,
                 },
             )]),
+            default_intertia: 0.0,
         },
     );
 
@@ -108,7 +112,8 @@ fn trivial_targeted_input_system_updates_aimeta_inputs() {
         .targeted_input_scores
         .contains_key(&type_id_of(&trivial_targeted_input)));
     assert_eq!(
-        ai_meta.targeted_input_scores[&type_id_of(&trivial_targeted_input)][&target_entity_id],
+        ai_meta.targeted_input_scores[&type_id_of(&trivial_targeted_input)]
+            [&target_entity_id],
         0.25
     );
 }
@@ -139,6 +144,7 @@ fn targeted_input_system_updates_aimeta_inputs() {
                     target_filter: FilterDefinition::Any,
                 },
             )]),
+            default_intertia: 0.0,
         },
     );
 
@@ -184,11 +190,12 @@ fn trivial_targeted_input_system_respects_filter_set() {
             targeted_inputs: HashMap::from_iter(vec![(
                 type_id_of(&trivial_targeted_input),
                 TargetedInputRequirements {
-                    target_filter: FilterDefinition::Filtered(vec![vec![Filter::Inclusive(
-                        TypeId::of::<AA>(),
-                    )]]),
+                    target_filter: FilterDefinition::Filtered(vec![vec![
+                        Filter::Inclusive(TypeId::of::<AA>()),
+                    ]]),
                 },
             )]),
+            default_intertia: 0.0,
         },
     );
 
@@ -206,7 +213,8 @@ fn trivial_targeted_input_system_respects_filter_set() {
         .targeted_input_scores
         .contains_key(&type_id_of(&trivial_targeted_input)));
     assert_eq!(
-        ai_meta.targeted_input_scores[&type_id_of(&trivial_targeted_input)][&entity_target],
+        ai_meta.targeted_input_scores[&type_id_of(&trivial_targeted_input)]
+            [&entity_target],
         0.75
     );
     assert!(

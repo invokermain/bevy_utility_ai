@@ -75,7 +75,10 @@ pub(crate) fn make_decisions_sys(
                         .transform(consideration_input_score)
                         .clamp(0.0, 1.0);
                     if consideration_score.is_nan() {
-                        warn!("response curve returned NaN for input {:.2}", consideration_input_score);
+                        warn!(
+                            "response curve returned NaN for input {:.2}",
+                            consideration_input_score
+                        );
                         consideration_score = 0.0;
                     }
                     debug!(
@@ -221,14 +224,12 @@ pub(crate) fn make_decisions_sys(
             let decision_inertia = ai_definition.decisions[current_decision_idx].intertia;
             let inertia = decision_inertia.unwrap_or(ai_definition.default_intertia);
             if inertia >= 0.0 {
-                if let Some(index) =
-                    evaluated_decisions
-                        .iter_mut()
-                        .position(|(decision_idx, target, _)| {
-                            decision_idx == &current_decision_idx
-                                && target == &ai_meta.current_target
-                        })
-                {
+                if let Some(index) = evaluated_decisions.iter_mut().position(
+                    |(decision_idx, target, _)| {
+                        decision_idx == &current_decision_idx
+                            && target == &ai_meta.current_target
+                    },
+                ) {
                     evaluated_decisions[index].2 += inertia;
                 }
             };

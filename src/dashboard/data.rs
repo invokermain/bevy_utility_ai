@@ -17,7 +17,8 @@ pub(crate) struct DashboardData {
     /// The entities that have the select AI Definition applied to them.
     pub(crate) entities: Vec<Entity>,
     /// Input scores for the selected Entities
-    pub(crate) input_scores: HashMap<Entity, HashMap<(String, Option<Entity>), VecDeque<f32>>>,
+    pub(crate) input_scores:
+        HashMap<Entity, HashMap<(String, Option<Entity>), VecDeque<f32>>>,
     /// Considerations scores for the selected Entities
     pub(crate) consideration_scores:
         HashMap<Entity, HashMap<(String, Option<Entity>), VecDeque<f32>>>,
@@ -89,8 +90,7 @@ pub(crate) fn sync_dashboard_data(
         dashboard_state
             .selected_ai_definition
             .as_ref()
-            .map(|f| f.id)
-            .clone(),
+            .map(|f| f.id),
     );
 
     if selected_ai_definition_changed {

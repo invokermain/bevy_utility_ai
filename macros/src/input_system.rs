@@ -3,7 +3,10 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Error, ItemFn};
 
-pub(crate) fn input_system(_: TokenStream, input: TokenStream) -> Result<TokenStream, Error> {
+pub(crate) fn input_system(
+    _: TokenStream,
+    input: TokenStream,
+) -> Result<TokenStream, Error> {
     let item_fn = match syn::parse::<ItemFn>(input) {
         Ok(ast) => ast,
         Err(err) => return Err(err),
@@ -34,10 +37,11 @@ pub(crate) fn input_system(_: TokenStream, input: TokenStream) -> Result<TokenSt
         .map(|ParsedInput { ident, tokens, .. }| quote! { #ident: #tokens })
         .collect();
 
+    let vis = item_fn.vis;
     let body = item_fn.block;
 
     let output = quote! {
-        fn #name(
+        #vis fn #name(
             mut query_input_system: bevy::prelude::Query<(bevy::prelude::Entity, &mut bevy_utility_ai::AIMeta #(, &#component_arg_types)*)>,
             res_ai_definitions: bevy::prelude::Res<bevy_utility_ai::AIDefinitions>,
             #[cfg(debug_assertions)]

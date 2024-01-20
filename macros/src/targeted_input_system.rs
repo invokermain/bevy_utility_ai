@@ -1,4 +1,6 @@
-use crate::common::{parse_input, parse_tuple_input, ParsedInput, ParsedTupleInput, SigType};
+use crate::common::{
+    parse_input, parse_tuple_input, ParsedInput, ParsedTupleInput, SigType,
+};
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::{quote, ToTokens};
@@ -17,7 +19,7 @@ pub(crate) fn targeted_input_system(
     let name = item_fn.sig.ident;
     let quoted_name = format!("{}", name);
 
-    if item_fn.sig.inputs.len() == 0 {
+    if item_fn.sig.inputs.is_empty() {
         return Err(Error::new_spanned(
             item_fn.sig.inputs.into_token_stream(),
             "Expected at least one input".to_string(),
@@ -51,7 +53,8 @@ pub(crate) fn targeted_input_system(
                         if subject_input.is_some() {
                             return Err(Error::new_spanned(
                                 input.clone().into_token_stream(),
-                                "There already exists an input named 'subject'".to_string(),
+                                "There already exists an input named 'subject'"
+                                    .to_string(),
                             ));
                         }
                         subject_input = Some(parse_tuple_input(input)?);
@@ -60,7 +63,8 @@ pub(crate) fn targeted_input_system(
                         if target_input.is_some() {
                             return Err(Error::new_spanned(
                                 input.clone().into_token_stream(),
-                                "There already exists an input named 'target'".to_string(),
+                                "There already exists an input named 'target'"
+                                    .to_string(),
                             ));
                         }
                         target_input = Some(parse_tuple_input(input)?);
@@ -94,10 +98,12 @@ pub(crate) fn targeted_input_system(
 
     if let Some(subject_input) = subject_input {
         subject_ident = Some(subject_input.ident.clone());
-        for (arg_type, arg_name) in subject_input.arg_types.iter().zip(subject_input.arg_names)
+        for (arg_type, arg_name) in
+            subject_input.arg_types.iter().zip(subject_input.arg_names)
         {
             if arg_type.ident.to_string().as_str() == "Entity" {
-                subject_arg_names.push(Ident::new("subject_entity_id", Span::call_site()));
+                subject_arg_names
+                    .push(Ident::new("subject_entity_id", Span::call_site()));
             } else {
                 subject_arg_names.push(arg_name.clone());
                 subject_arg_types.push(arg_type.clone());
@@ -116,7 +122,9 @@ pub(crate) fn targeted_input_system(
     let mut target_arg_types = Vec::new();
 
     if let Some(target_input) = target_input {
-        for (arg_type, arg_name) in target_input.arg_types.iter().zip(target_input.arg_names) {
+        for (arg_type, arg_name) in
+            target_input.arg_types.iter().zip(target_input.arg_names)
+        {
             if arg_type.ident.to_string().as_str() == "Entity" {
                 target_arg_names.push(Ident::new("target_entity_id", Span::call_site()));
             } else {
@@ -131,6 +139,7 @@ pub(crate) fn targeted_input_system(
     target_arg_names.retain(|n| n.to_string().as_str() != "target_entity_id");
 
     let body = item_fn.block;
+    let vis = item_fn.vis;
 
     let extra_args: Vec<proc_macro2::TokenStream> = extra_inputs
         .iter()
@@ -138,7 +147,7 @@ pub(crate) fn targeted_input_system(
         .collect();
 
     let output = quote! {
-        fn #name(
+        #vis fn #name(
             mut q_subject: bevy::prelude::Query<(bevy::prelude::Entity, &mut bevy_utility_ai::AIMeta #(, &#subject_arg_types)*)>,
             q_target: bevy::prelude::Query<(bevy::prelude::Entity #(, &#target_arg_types)*)>,
             res_ai_definitions: bevy::prelude::Res<bevy_utility_ai::AIDefinitions>,

@@ -1,10 +1,12 @@
+mod bundles;
 mod camera;
 mod logic;
 mod ui;
 
-use crate::logic::ai::{construct_hunter_ai, HunterAI, PreyAI};
-use crate::logic::components::Energy;
-use crate::logic::food::{despawn_empty_food, eat, increase_hunger, spawn_food, Hunger};
+use crate::logic::ai::hunter::{construct_hunter_ai, HunterAI};
+use crate::logic::food::{
+    despawn_empty_food, eat, increase_hunger, spawn_food_on_kill, Hunger,
+};
 use crate::logic::hunt::PreyKilledEvent;
 use crate::ui::action_text_update_system;
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
@@ -16,14 +18,19 @@ use bevy_egui::EguiPlugin;
 use bevy_utility_ai::dashboard::UtilityAIDashboardPlugin;
 use bevy_utility_ai::plugin::{UtilityAIPlugin, UtilityAISet};
 use bevy_utility_ai::systems::make_decisions::EntityActionChangedEvent;
+use bundles::GrassBundle;
 use camera::{mouse_control, scroll_zoom};
+use logic::ai::prey::{construct_prey_ai, PreyAI};
+use logic::food::spawn_new_grass_on_grass_despawn;
 use logic::hunt::hunt;
-use logic::rest::{idle, rest};
+use logic::prey::{flee, herd, remove_flee_to};
+use logic::rest::{idle, rest, Energy};
+use logic::water::{drink, increase_thirst, Thirst, Water};
 use rand::Rng;
 use std::time::Duration;
 use ui::{
-    energy_text_update_system, fps_text_update_system, hunger_text_update_system,
-    setup_fps_counter,
+    draw_fence, energy_text_update_system, fps_text_update_system,
+    hunger_text_update_system, setup_fps_counter, thirst_text_update_system,
 };
 
 // This system listens to EntityActionChangedEvent events and logs them to give us some
@@ -52,7 +59,6 @@ fn main() {
                 primary_window: Some(Window {
                     fit_canvas_to_parent: true,
                     resolution: WindowResolution::new(800., 800.),
-                    resizable: false,
                     ..default()
                 }),
                 ..default()
@@ -71,6 +77,8 @@ fn main() {
             action_text_update_system,
             hunger_text_update_system,
             energy_text_update_system,
+            thirst_text_update_system,
+            draw_fence,
         ),
     );
 
@@ -84,9 +92,9 @@ fn main() {
     // So we don't have to deal with time deltas in this example use a fixed timestep for
     // our systems. In general there is no need for the Utility AI systems to run every
     // tick.
-    app.insert_resource(Time::<Fixed>::from_duration(Duration::from_secs_f64(0.1)));
+    app.insert_resource(Time::<Fixed>::from_duration(Duration::from_secs_f64(0.05)));
 
-    // Add the Utility AI plugins
+    // Add the Utility AI plugins, uncomment the extra plugins to see the dashboard
     app.add_plugins((
         UtilityAIPlugin::new(FixedUpdate),
         EguiPlugin,
@@ -95,7 +103,7 @@ fn main() {
 
     // Add our AI logic
     construct_hunter_ai(&mut app);
-
+    construct_prey_ai(&mut app);
     // Add our game systems
     app.add_systems(
         FixedUpdate,
@@ -103,18 +111,28 @@ fn main() {
             hunt,
             rest,
             increase_hunger,
-            spawn_food,
-            despawn_empty_food,
+            increase_thirst,
+            spawn_food_on_kill,
             eat,
             idle,
+            flee,
+            remove_flee_to,
+            drink,
+            herd,
+            (
+                despawn_empty_food,
+                apply_deferred,
+                spawn_new_grass_on_grass_despawn,
+            )
+                .chain(),
         ),
     );
 
-    // Spawn some entities
-    app.add_systems(Startup, worldgen);
-
     // Register our events
     app.add_event::<PreyKilledEvent>();
+
+    // Spawn some entities
+    app.add_systems(Startup, worldgen);
 
     app.run()
 }
@@ -131,7 +149,7 @@ fn worldgen(
     let mut rng = rand::thread_rng();
 
     commands.spawn_batch(
-        (0..10)
+        (0..25)
             .map(|_| {
                 (
                     MaterialMesh2dBundle {
@@ -140,15 +158,19 @@ fn worldgen(
                         transform: Transform::from_translation(Vec3::new(
                             rng.gen_range(-1000.0..=1000.0),
                             rng.gen_range(-1000.0..=1000.0),
-                            0.,
+                            2.,
                         )),
                         ..default()
                     },
-                    Energy {
-                        value: 100.,
+                    PreyAI {}, // this component enables the PreyAI's behaviour
+                    Thirst {
+                        value: rng.gen_range(0.0..=100.0),
                         max: 100.,
                     },
-                    PreyAI {},
+                    Hunger {
+                        value: rng.gen_range(0.0..=100.0),
+                        max: 100.,
+                    },
                 )
             })
             .collect::<Vec<_>>(),
@@ -159,17 +181,61 @@ fn worldgen(
         MaterialMesh2dBundle {
             mesh: pixel_mesh.clone().into(),
             material: materials.add(ColorMaterial::from(Color::WHITE)),
-            transform: Transform::from_translation(Vec3::Z),
+            transform: Transform::from_translation(Vec3::new(0., 0., 3.)),
             ..default()
+        },
+        HunterAI {}, // this component enables the HunterAI behaviour
+        Hunger {
+            value: 0.0,
+            max: 100.0,
+        },
+        Thirst {
+            value: 0.,
+            max: 100.,
         },
         Energy {
             value: 100.0,
             max: 100.0,
         },
-        HunterAI {}, // this component enables the HunterAI behaviour
-        Hunger {
-            value: 50.0,
-            max: 100.0,
-        },
     ));
+
+    // Spawn two water sources
+    commands.spawn((
+        MaterialMesh2dBundle {
+            mesh: meshes.add(shape::Circle::new(25.).into()).into(),
+            material: materials.add(ColorMaterial::from(Color::BLUE)),
+            transform: Transform::from_translation(Vec3::new(250., 250., 1.)),
+            ..default()
+        },
+        Water {},
+    ));
+    commands.spawn((
+        MaterialMesh2dBundle {
+            mesh: meshes.add(shape::Circle::new(25.).into()).into(),
+            material: materials.add(ColorMaterial::from(Color::BLUE)),
+            transform: Transform::from_translation(Vec3::new(-250., -250., 1.)),
+            ..default()
+        },
+        Water {},
+    ));
+
+    // Spawn some grass
+    commands.spawn_batch(
+        (0..100)
+            .map(|_| {
+                Vec2::new(
+                    rng.gen_range(-1000.0..=1000.0),
+                    rng.gen_range(-1000.0..=1000.0),
+                )
+            })
+            // filter out grass near water
+            .filter(|pos| {
+                !((-300f32..-200f32).contains(&pos.x)
+                    && (-300f32..-200f32).contains(&pos.y))
+                    || ((300f32..200f32).contains(&pos.x)
+                        && (300f32..200f32).contains(&pos.y))
+            })
+            .map(|pos| GrassBundle::new(pos, &mut meshes, &mut materials))
+            .collect::<Vec<_>>(),
+    );
 }

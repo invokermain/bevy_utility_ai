@@ -1,5 +1,7 @@
-use crate::logic::ai::{ActionHunt, HunterAI, PreyAI};
-use crate::logic::components::Energy;
+use crate::logic::ai::actions::ActionHunt;
+use crate::logic::ai::hunter::HunterAI;
+use crate::logic::ai::prey::PreyAI;
+use crate::logic::rest::Energy;
 use bevy::prelude::{
     Commands, Entity, Event, EventWriter, Query, Transform, Vec3, With, Without,
 };
@@ -27,7 +29,7 @@ pub fn hunt(
             let target_position = target.translation;
 
             // if we are close enough kill the prey
-            if target_position.distance(*position) <= 5.0 {
+            if target_position.distance(*position) <= 7.5 {
                 commands.entity(target_entity.target).despawn();
                 ev_prey_killed.send(PreyKilledEvent {
                     entity: target_entity.target,
@@ -37,7 +39,7 @@ pub fn hunt(
             // otherwise move towards our prey
             else {
                 let movement_vector = target_position - *position;
-                *position += movement_vector.normalize() * 5.0;
+                *position += movement_vector.normalize() * 7.5;
             }
 
             energy.value -= 0.5;

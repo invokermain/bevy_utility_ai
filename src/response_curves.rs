@@ -39,12 +39,10 @@ fn write_slope(f: &mut Formatter<'_>, slope: f32) -> std::fmt::Result {
 fn write_x(f: &mut Formatter<'_>, x_shift: f32) -> std::fmt::Result {
     if x_shift == 0.0 {
         write!(f, "x")?
+    } else if x_shift.is_sign_positive() {
+        write!(f, "(x - {:.})", x_shift)?;
     } else {
-        if x_shift.is_sign_positive() {
-            write!(f, "(x - {:.})", x_shift)?;
-        } else {
-            write!(f, "(x + {:.})", x_shift.abs())?;
-        }
+        write!(f, "(x + {:.})", x_shift.abs())?;
     }
     Ok(())
 }

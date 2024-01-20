@@ -1,5 +1,6 @@
 pub mod ai;
-pub mod components;
 pub mod food;
 pub mod hunt;
+pub mod prey;
 pub mod rest;
+pub mod water;

@@ -19,8 +19,8 @@ pub(crate) struct DashboardState {
 }
 
 impl DashboardState {
-    pub(crate) fn reset(&mut self, dashboard_data: &DashboardData) {
-        self.selected_ai_definition = dashboard_data.ai_definitions.get(0).cloned();
+    pub(crate) fn reset(&mut self, _dashboard_data: &DashboardData) {
+        self.selected_entities = HashSet::new();
     }
 }
 
@@ -87,12 +87,16 @@ pub(crate) fn layout(
             entity_filter(ui, &dashboard_data, &mut dashboard_state)
         });
 
-    egui::CentralPanel::default().show(ctx.get_mut(), |ui| match dashboard_state.view_mode {
-        ViewMode::Decisions => plot_decision_scores(ui, &dashboard_data, &dashboard_state),
-        ViewMode::Considerations => {
-            plot_consideration_scores(ui, &dashboard_data, &dashboard_state)
+    egui::CentralPanel::default().show(ctx.get_mut(), |ui| {
+        match dashboard_state.view_mode {
+            ViewMode::Decisions => {
+                plot_decision_scores(ui, &dashboard_data, &dashboard_state)
+            }
+            ViewMode::Considerations => {
+                plot_consideration_scores(ui, &dashboard_data, &dashboard_state)
+            }
+            ViewMode::Inputs => plot_input_scores(ui, &dashboard_data, &dashboard_state),
         }
-        ViewMode::Inputs => plot_input_scores(ui, &dashboard_data, &dashboard_state),
     });
 }
 

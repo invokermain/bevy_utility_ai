@@ -57,6 +57,7 @@ fn input_system_macro_updates_aimeta_inputs() {
             decisions: vec![], // this field doesn't matter for this test
             simple_inputs: HashSet::from_iter(vec![type_id_of(&utility_input_low)]),
             targeted_inputs: Default::default(),
+            default_intertia: 0.0,
         },
     );
 
