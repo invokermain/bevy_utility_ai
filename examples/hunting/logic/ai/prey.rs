@@ -5,7 +5,7 @@ use bevy_utility_ai::decisions::Decision;
 use bevy_utility_ai::define_ai::DefineAI;
 use bevy_utility_ai::response_curves::{Linear, Polynomial};
 
-use crate::logic::food::Grass;
+use crate::logic::food::{Grass, Food};
 use crate::logic::water::Water;
 
 use super::actions::{ActionDrink, ActionEat, ActionFlee, ActionHerd, ActionIdle};
@@ -57,6 +57,8 @@ pub(crate) fn construct_prey_ai(app: &mut App) {
             Decision::targeted::<ActionEat>()
                 // only grass
                 .target_filter_include::<Grass>()
+                // only food
+                .target_filter_include::<Food>()
                 // & prefer closer targets
                 .add_consideration(
                     Consideration::targeted(distance_to)

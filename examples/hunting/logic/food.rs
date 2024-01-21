@@ -1,11 +1,9 @@
-use crate::bundles::GrassBundle;
 use crate::logic::ai::actions::ActionEat;
 use crate::logic::hunt::PreyKilledEvent;
 use bevy::asset::Assets;
 use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy_utility_ai::ActionTarget;
-use rand::Rng;
 
 #[derive(Component)]
 pub struct Hunger {
@@ -19,9 +17,14 @@ pub struct Food {
 }
 
 #[derive(Component, Default)]
-pub struct Grass {}
+pub struct Grass {
+    growth: u8
+}
 
-pub fn spawn_food_on_kill(
+#[derive(Component, Default)]
+pub struct Carrion {}
+
+pub fn spawn_carrion_on_kill(
     mut er_prey_killed: EventReader<PreyKilledEvent>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -31,6 +34,7 @@ pub fn spawn_food_on_kill(
         let position = prey_killed.position;
         commands.spawn((
             Food { remaining: 100. },
+            Carrion::default(),
             MaterialMesh2dBundle {
                 material: materials.add(ColorMaterial::from(Color::BLACK)),
                 mesh: meshes.add(shape::Circle::new(5.).into()).into(),
@@ -43,33 +47,6 @@ pub fn spawn_food_on_kill(
     }
 }
 
-pub fn spawn_new_grass_on_grass_despawn(
-    mut removed: RemovedComponents<Grass>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    let mut rng = rand::thread_rng();
-    for _ in removed.read() {
-        let mut position: Vec2;
-        loop {
-            position = Vec2::new(
-                rng.gen_range(-1000.0..=1000.0),
-                rng.gen_range(-1000.0..=1000.0),
-            );
-            if !((-300f32..-200f32).contains(&position.x)
-                && (-300f32..-200f32).contains(&position.y))
-                || ((300f32..200f32).contains(&position.x)
-                    && (300f32..200f32).contains(&position.y))
-            {
-                break;
-            }
-        }
-
-        commands.spawn(GrassBundle::new(position, &mut meshes, &mut materials));
-    }
-}
-
 pub fn increase_hunger(mut q_hunger: Query<&mut Hunger>) {
     for mut hunger in q_hunger.iter_mut() {
         hunger.value += 0.1;
@@ -79,11 +56,33 @@ pub fn increase_hunger(mut q_hunger: Query<&mut Hunger>) {
     }
 }
 
-pub fn despawn_empty_food(q_food: Query<(Entity, &Food)>, mut commands: Commands) {
+pub fn despawn_eaten_carrion(q_food: Query<(Entity, &Food), With<Carrion>>, mut commands: Commands) {
     for (entity, food) in q_food.iter() {
         if food.remaining == 0.0 {
             commands.entity(entity).despawn();
         }
+    }
+}
+
+pub fn hide_eaten_grass(mut q_grass: Query<(Entity, &mut Grass, &Food, &mut Visibility)>, mut commands: Commands) {
+    for (entity, mut grass, food, mut visibility) in &mut q_grass {
+        if food.remaining == 0.0 {
+            grass.growth = 0;
+            *visibility = Visibility::Hidden;
+            commands.entity(entity).remove::<Food>();
+        }
+    }
+}
+
+pub fn regrow_grass(mut q_grass: Query<(Entity, &mut Grass, &mut Visibility), Without<Food>>, mut commands: Commands) {
+    for (entity, mut grass, mut visibility) in &mut q_grass {
+        grass.growth += 1;
+
+        if grass.growth >= 100 {
+            *visibility = Visibility::Visible;
+            commands.entity(entity).insert(Food { remaining: 50.0 });
+        }
+    
     }
 }
 

@@ -5,7 +5,7 @@ mod ui;
 
 use crate::logic::ai::hunter::{construct_hunter_ai, HunterAI};
 use crate::logic::food::{
-    despawn_empty_food, eat, increase_hunger, spawn_food_on_kill, Hunger,
+    despawn_eaten_carrion, eat, increase_hunger, spawn_carrion_on_kill, Hunger,
 };
 use crate::logic::hunt::PreyKilledEvent;
 use crate::ui::action_text_update_system;
@@ -21,7 +21,7 @@ use bevy_utility_ai::systems::make_decisions::EntityActionChangedEvent;
 use bundles::GrassBundle;
 use camera::{mouse_control, scroll_zoom};
 use logic::ai::prey::{construct_prey_ai, PreyAI};
-use logic::food::spawn_new_grass_on_grass_despawn;
+use logic::food::{regrow_grass, hide_eaten_grass};
 use logic::hunt::hunt;
 use logic::prey::{flee, herd, remove_flee_to};
 use logic::rest::{idle, rest, Energy};
@@ -112,19 +112,16 @@ fn main() {
             rest,
             increase_hunger,
             increase_thirst,
-            spawn_food_on_kill,
+            spawn_carrion_on_kill,
             eat,
             idle,
             flee,
             remove_flee_to,
             drink,
             herd,
-            (
-                despawn_empty_food,
-                apply_deferred,
-                spawn_new_grass_on_grass_despawn,
-            )
-                .chain(),
+            despawn_eaten_carrion,
+            hide_eaten_grass,
+            regrow_grass
         ),
     );
 
