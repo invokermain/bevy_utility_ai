@@ -21,9 +21,9 @@ use bevy_utility_ai::systems::make_decisions::EntityActionChangedEvent;
 use bundles::GrassBundle;
 use camera::{mouse_control, scroll_zoom};
 use logic::ai::prey::{construct_prey_ai, PreyAI};
-use logic::food::{regrow_grass, hide_eaten_grass};
+use logic::food::{hide_eaten_grass, regrow_grass};
 use logic::hunt::hunt;
-use logic::prey::{flee, herd, remove_flee_to};
+use logic::prey::{flee, herd, remove_flee_to, PreyBundle};
 use logic::rest::{idle, rest, Energy};
 use logic::water::{drink, increase_thirst, Thirst, Water};
 use rand::Rng;
@@ -121,7 +121,7 @@ fn main() {
             herd,
             despawn_eaten_carrion,
             hide_eaten_grass,
-            regrow_grass
+            regrow_grass,
         ),
     );
 
@@ -140,40 +140,16 @@ fn worldgen(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     // Spawn some prey
-    let prey_material = materials.add(ColorMaterial::from(Color::PURPLE));
-    let pixel_mesh = meshes.add(shape::Box::new(5., 5., 0.).into());
-
-    let mut rng = rand::thread_rng();
-
     commands.spawn_batch(
         (0..25)
-            .map(|_| {
-                (
-                    MaterialMesh2dBundle {
-                        mesh: pixel_mesh.clone().into(),
-                        material: prey_material.clone(),
-                        transform: Transform::from_translation(Vec3::new(
-                            rng.gen_range(-1000.0..=1000.0),
-                            rng.gen_range(-1000.0..=1000.0),
-                            2.,
-                        )),
-                        ..default()
-                    },
-                    PreyAI {}, // this component enables the PreyAI's behaviour
-                    Thirst {
-                        value: rng.gen_range(0.0..=100.0),
-                        max: 100.,
-                    },
-                    Hunger {
-                        value: rng.gen_range(0.0..=100.0),
-                        max: 100.,
-                    },
-                )
-            })
+            .map(|_| PreyBundle::new(&mut meshes, &mut materials))
             .collect::<Vec<_>>(),
     );
 
     // Spawn our hunter
+    let pixel_mesh = meshes.add(shape::Box::new(5., 5., 0.).into());
+
+    let mut rng = rand::thread_rng();
     commands.spawn((
         MaterialMesh2dBundle {
             mesh: pixel_mesh.clone().into(),
@@ -227,10 +203,8 @@ fn worldgen(
             })
             // filter out grass near water
             .filter(|pos| {
-                !((-300f32..-200f32).contains(&pos.x)
-                    && (-300f32..-200f32).contains(&pos.y))
-                    || ((300f32..200f32).contains(&pos.x)
-                        && (300f32..200f32).contains(&pos.y))
+                !(Rect::new(-300., -300., -200., -200.).contains(*pos)
+                    || Rect::new(200., 200., 300., 300.).contains(*pos))
             })
             .map(|pos| GrassBundle::new(pos, &mut meshes, &mut materials))
             .collect::<Vec<_>>(),

@@ -5,12 +5,14 @@ use bevy_utility_ai::decisions::Decision;
 use bevy_utility_ai::define_ai::DefineAI;
 use bevy_utility_ai::response_curves::{Linear, Polynomial};
 
-use crate::logic::food::{Grass, Food};
+use crate::logic::food::{Food, Grass};
 use crate::logic::water::Water;
 
 use super::actions::{ActionDrink, ActionEat, ActionFlee, ActionHerd, ActionIdle};
 use super::hunter::HunterAI;
-use super::inputs::{distance_to, hunger, thirst};
+use super::inputs::{
+    distance_to, hunger, percieved_threat_level, prey_confidence, thirst,
+};
 
 #[derive(Component)]
 pub struct PreyAI {}
@@ -31,7 +33,9 @@ pub(crate) fn construct_prey_ai(app: &mut App) {
                     Consideration::targeted(distance_to).with_response_curve(
                         Polynomial::new(-1.0 / 500.0f32.powi(2), 2.0).shifted(0.0, 1.0),
                     ),
-                ),
+                )
+                // modulate by our personality
+                .add_consideration(Consideration::simple(prey_confidence)),
         )
         .add_decision(
             // Drink from...
@@ -49,6 +53,8 @@ pub(crate) fn construct_prey_ai(app: &mut App) {
                         Polynomial::new(-0.0001, 1.0).shifted(0.0, 1.0),
                     ),
                 )
+                // & prefer targets that have lower threat level
+                .add_consideration(Consideration::targeted(percieved_threat_level))
                 // set a base score of 0.95 so that we always prefer fleeing the hunter
                 .set_base_score(0.90),
         )
@@ -64,6 +70,8 @@ pub(crate) fn construct_prey_ai(app: &mut App) {
                     Consideration::targeted(distance_to)
                         .with_response_curve(Linear::new(-0.001).shifted(0.0, 1.0)),
                 )
+                // & prefer targets that have lower threat level
+                .add_consideration(Consideration::targeted(percieved_threat_level))
                 // & prefer if we are hungry
                 .add_consideration(
                     Consideration::simple(hunger)

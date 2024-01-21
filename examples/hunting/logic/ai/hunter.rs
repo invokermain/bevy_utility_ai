@@ -1,6 +1,6 @@
 use crate::logic::ai::actions::{ActionEat, ActionHunt, ActionIdle, ActionRest};
 use crate::logic::ai::inputs::{distance_to, energy, food_availability, hunger};
-use crate::logic::food::{Food, Grass};
+use crate::logic::food::{Carrion, Food, Grass};
 use crate::logic::water::Water;
 use bevy::app::App;
 use bevy::prelude::Component;
@@ -77,9 +77,8 @@ pub(crate) fn construct_hunter_ai(app: &mut App) {
         .add_decision(
             // Eat...
             Decision::targeted::<ActionEat>()
-                // only food, but not grass
-                .target_filter_include::<Food>()
-                .target_filter_exclude::<Grass>()
+                // only carrion
+                .target_filter_include::<Carrion>()
                 // & prefer closer targets
                 .add_consideration(
                     Consideration::targeted(distance_to)

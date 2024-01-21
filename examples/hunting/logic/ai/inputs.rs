@@ -2,10 +2,14 @@
 // required components.
 
 use crate::logic::food::{Food, Hunger};
+use crate::logic::prey::PreyPersonality;
 use crate::logic::rest::Energy;
 use crate::logic::water::Thirst;
+use bevy::ecs::query::With;
 use bevy::prelude::{Query, Transform};
 use bevy_utility_ai_macros::{input_system, targeted_input_system};
+
+use super::hunter::HunterAI;
 
 /// How much energy we have on a scale of 0.0 to 1.0
 #[input_system]
@@ -32,6 +36,12 @@ pub(crate) fn food_availability(hunger: &Hunger, q_food: Query<&Food>) -> f32 {
     (total_food - hunger.value).clamp(0.0, hunger.max) / hunger.max
 }
 
+/// Our Confidence (for Prey)
+#[input_system]
+pub(crate) fn prey_confidence(personality: &PreyPersonality) -> f32 {
+    personality.confidence
+}
+
 // Define targeted input systems, these are calculated for every combination of entity and
 // target entity that match the required components.
 
@@ -42,4 +52,16 @@ pub(crate) fn distance_to(subject: (&Transform,), target: (&Transform,)) -> f32 
     let target_pos = target.0.translation;
 
     subject_pos.distance(target_pos)
+}
+
+/// Threat Level at Target modulated by Prey's confidnce
+#[targeted_input_system]
+pub(crate) fn percieved_threat_level(
+    subject: (&PreyPersonality,),
+    target: (&Transform,),
+    q_hunter: Query<&Transform, With<HunterAI>>,
+) -> f32 {
+    let target_pos = target.0.translation;
+    let hunter_pos = q_hunter.single().translation;
+    (1.0 - target_pos.distance(hunter_pos) / 500.0).max(0.0) / subject.0.confidence
 }

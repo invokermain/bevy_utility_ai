@@ -1,15 +1,74 @@
+use bevy::asset::Assets;
+use bevy::ecs::bundle::Bundle;
 use bevy::ecs::component::Component;
 use bevy::ecs::entity::Entity;
 use bevy::ecs::query::{With, Without};
 use bevy::ecs::removal_detection::RemovedComponents;
-use bevy::ecs::system::{Commands, ParamSet, Query};
+use bevy::ecs::system::{Commands, ParamSet, Query, ResMut};
 use bevy::math::{Vec2, Vec3, Vec3Swizzles};
+use bevy::prelude::default;
+use bevy::render::color::Color;
+use bevy::render::mesh::{shape, Mesh};
+use bevy::sprite::{ColorMaterial, MaterialMesh2dBundle};
 use bevy::transform::components::Transform;
 use bevy_utility_ai::ActionTarget;
 use rand::Rng;
 
 use super::ai::actions::{ActionFlee, ActionHerd};
 use super::ai::hunter::HunterAI;
+use super::ai::prey::PreyAI;
+use super::food::Hunger;
+use super::water::Thirst;
+
+#[derive(Component)]
+pub struct PreyPersonality {
+    /// Confidence greater than 1 implies more willingness to take risk
+    pub confidence: f32,
+}
+
+#[derive(Bundle)]
+pub struct PreyBundle {
+    mesh: MaterialMesh2dBundle<ColorMaterial>,
+    prey_ai: PreyAI, // this component enables the PreyAI's behaviour
+    thirst: Thirst,
+    hunger: Hunger,
+    personality: PreyPersonality,
+}
+
+impl PreyBundle {
+    pub fn new(
+        meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<ColorMaterial>>,
+    ) -> Self {
+        let prey_material = materials.add(ColorMaterial::from(Color::PURPLE));
+        let pixel_mesh = meshes.add(shape::Box::new(5., 5., 0.).into());
+        let mut rng = rand::thread_rng();
+        Self {
+            mesh: MaterialMesh2dBundle {
+                mesh: pixel_mesh.clone().into(),
+                material: prey_material.clone(),
+                transform: Transform::from_translation(Vec3::new(
+                    rng.gen_range(-1000.0..=1000.0),
+                    rng.gen_range(-1000.0..=1000.0),
+                    2.,
+                )),
+                ..default()
+            },
+            prey_ai: PreyAI {},
+            thirst: Thirst {
+                value: rng.gen_range(0.0..=100.0),
+                max: 100.,
+            },
+            hunger: Hunger {
+                value: rng.gen_range(0.0..=100.0),
+                max: 100.,
+            },
+            personality: PreyPersonality {
+                confidence: rng.gen_range(75.0..=125.0),
+            },
+        }
+    }
+}
 
 #[derive(Component)]
 pub struct FleeTo {
