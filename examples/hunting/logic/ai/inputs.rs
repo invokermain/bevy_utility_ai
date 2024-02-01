@@ -1,7 +1,7 @@
 // Define simple input system, this input is calculated for each entity that has the
 // required components.
 
-use crate::logic::food::{Food, Hunger};
+use crate::logic::food::{Carrion, Food, Hunger};
 use crate::logic::prey::PreyPersonality;
 use crate::logic::rest::Energy;
 use crate::logic::water::Thirst;
@@ -31,7 +31,10 @@ pub(crate) fn thirst(thirst: &Thirst) -> f32 {
 
 /// How much food is in the area relative to our hunger on a scale of 0.0 to 1.0.
 #[input_system]
-pub(crate) fn food_availability(hunger: &Hunger, q_food: Query<&Food>) -> f32 {
+pub(crate) fn carcass_availability(
+    hunger: &Hunger,
+    q_food: Query<&Food, With<Carrion>>,
+) -> f32 {
     let total_food: f32 = q_food.iter().map(|food| food.remaining).sum();
     (total_food - hunger.value).clamp(0.0, hunger.max) / hunger.max
 }
@@ -56,7 +59,7 @@ pub(crate) fn distance_to(subject: (&Transform,), target: (&Transform,)) -> f32 
 
 /// Threat Level at Target modulated by Prey's confidnce
 #[targeted_input_system]
-pub(crate) fn percieved_threat_level(
+pub(crate) fn perceived_threat_level(
     subject: (&PreyPersonality,),
     target: (&Transform,),
     q_hunter: Query<&Transform, With<HunterAI>>,

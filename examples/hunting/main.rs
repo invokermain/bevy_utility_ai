@@ -20,7 +20,7 @@ use bevy_utility_ai::plugin::{UtilityAIPlugin, UtilityAISet};
 use bevy_utility_ai::systems::make_decisions::EntityActionChangedEvent;
 use bundles::GrassBundle;
 use camera::{mouse_control, scroll_zoom};
-use logic::ai::prey::{construct_prey_ai, PreyAI};
+use logic::ai::prey::construct_prey_ai;
 use logic::food::{hide_eaten_grass, regrow_grass};
 use logic::hunt::hunt;
 use logic::prey::{flee, herd, remove_flee_to, PreyBundle};

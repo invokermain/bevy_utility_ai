@@ -1,8 +1,7 @@
 use crate::dashboard::data::{DashboardData, GRAPH_HISTORY_SIZE};
-use bevy::ecs::entity::Entity;
+use crate::dashboard::view::DashboardState;
 use bevy::ecs::system::{Res, SystemParam, SystemState};
 use bevy::ecs::world::World;
-use bevy::utils::HashSet;
 use bevy_egui::egui::Ui;
 use egui_plot::{Corner, Legend, Line, Plot, PlotBounds, PlotPoints};
 
@@ -11,19 +10,23 @@ use super::base::WidgetSystem;
 #[derive(SystemParam)]
 pub(crate) struct ConsiderationScoresPlot<'w> {
     dashboard_data: Res<'w, DashboardData>,
+    dashboard_state: Res<'w, DashboardState>,
 }
 
 impl<'w> WidgetSystem for ConsiderationScoresPlot<'w> {
-    type Args = &'w HashSet<Entity>;
+    type Args = ();
     type Output = ();
 
     fn system(
         world: &mut World,
         state: &mut SystemState<Self>,
         ui: &mut Ui,
-        entities: Self::Args,
+        _args: Self::Args,
     ) -> Self::Output {
-        let state = state.get(world);
+        let ConsiderationScoresPlot {
+            dashboard_data,
+            dashboard_state,
+        } = state.get(world);
         let plot = Plot::new("consideration_scores")
             .legend(Legend::default().position(Corner::LeftTop))
             .allow_drag(false)
@@ -35,10 +38,8 @@ impl<'w> WidgetSystem for ConsiderationScoresPlot<'w> {
                 [0.0, 0.0],
                 [GRAPH_HISTORY_SIZE as f64, 1.01],
             ));
-            for entity in entities {
-                if let Some(scores) =
-                    state.dashboard_data.consideration_scores.get(entity)
-                {
+            for entity in &dashboard_state.selected_entities {
+                if let Some(scores) = dashboard_data.consideration_scores.get(entity) {
                     for ((input, target), scores_vec) in scores {
                         let name = match target {
                             None => input.to_string(),

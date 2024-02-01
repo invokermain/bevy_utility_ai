@@ -17,8 +17,10 @@ pub(crate) struct DashboardData {
     /// The entities that have the select AI Definition applied to them.
     pub(crate) entities: Vec<Entity>,
     /// Input scores for the selected Entities
-    pub(crate) input_scores:
+    pub(crate) entity_input_scores:
         HashMap<Entity, HashMap<(String, Option<Entity>), VecDeque<f32>>>,
+    /// Consideration Input Scores
+    pub(crate) consideration_input_scores: HashMap<String, VecDeque<f32>>,
     /// Considerations scores for the selected Entities
     pub(crate) consideration_scores:
         HashMap<Entity, HashMap<(String, Option<Entity>), VecDeque<f32>>>,
@@ -30,9 +32,10 @@ pub(crate) struct DashboardData {
 impl DashboardData {
     fn clear(&mut self) {
         self.entities.clear();
-        self.input_scores.clear();
+        self.entity_input_scores.clear();
         self.consideration_scores.clear();
         self.decision_scores.clear();
+        self.consideration_input_scores.clear();
     }
 }
 
@@ -83,6 +86,8 @@ pub(crate) fn sync_dashboard_data(
                 .flat_map(|archetype| archetype.entities())
                 .map(|archetype_entity| archetype_entity.entity())
                 .collect();
+
+            dashboard_data.entities.sort();
         }
     }
 
@@ -94,7 +99,7 @@ pub(crate) fn sync_dashboard_data(
     );
 
     if selected_ai_definition_changed {
-        dashboard_state.reset(&dashboard_data);
+        dashboard_state.reset();
     }
 }
 
@@ -111,7 +116,7 @@ pub(crate) fn record_input_scores(
     // will get an event for every input score we are tracking which might lead to desyncs.
     if !events.is_empty() {
         dashboard_data
-            .input_scores
+            .entity_input_scores
             .values_mut()
             .flat_map(|inner_map| inner_map.values_mut())
             .for_each(|scores| {
@@ -122,7 +127,10 @@ pub(crate) fn record_input_scores(
 
     for event in events.read() {
         if dashboard_state.selected_entities.contains(&event.entity) {
-            let entry = dashboard_data.input_scores.entry(event.entity).or_default();
+            let entry = dashboard_data
+                .entity_input_scores
+                .entry(event.entity)
+                .or_default();
 
             let scores_vec = entry
                 .entry((event.input.clone(), event.target))
@@ -133,6 +141,18 @@ pub(crate) fn record_input_scores(
             // as we are plotting slices over this vec we must make it contiguous
             scores_vec.make_contiguous();
         }
+
+        let scores_vec = dashboard_data
+            .consideration_input_scores
+            .entry(event.input.clone())
+            .or_insert(VecDeque::new());
+
+        if scores_vec.len() > 1000 {
+            scores_vec.pop_front();
+        }
+        scores_vec.push_back(event.score);
+        // as we are plotting slices over this vec we must make it contiguous
+        scores_vec.make_contiguous();
     }
 }
 

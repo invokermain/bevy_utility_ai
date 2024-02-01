@@ -3,11 +3,15 @@ use crate::events::{
     ConsiderationCalculatedEvent, DecisionCalculatedEvent, InputCalculatedEvent,
 };
 use crate::systems::make_decisions::{make_decisions_sys, EntityActionChangedEvent};
-use crate::systems::update_action::{update_actions_sys, UpdateEntityActionInternalEvent};
+use crate::systems::update_action::{
+    update_actions_sys, UpdateEntityActionInternalEvent,
+};
 use crate::AIDefinitions;
 use bevy::app::Update;
 use bevy::ecs::schedule::{InternedScheduleLabel, ScheduleLabel};
-use bevy::prelude::{IntoSystemConfigs, IntoSystemSetConfigs, Plugin, Resource, SystemSet};
+use bevy::prelude::{
+    IntoSystemConfigs, IntoSystemSetConfigs, Plugin, Resource, SystemSet,
+};
 
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
 pub enum UtilityAISet {

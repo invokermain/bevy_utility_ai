@@ -22,8 +22,7 @@ use super::water::Thirst;
 
 #[derive(Component)]
 pub struct PreyPersonality {
-    /// Confidence greater than 1 implies more willingness to take risk
-    pub confidence: f32,
+    pub confidence: f32, // between 0 and 1
 }
 
 #[derive(Bundle)]
@@ -64,7 +63,7 @@ impl PreyBundle {
                 max: 100.,
             },
             personality: PreyPersonality {
-                confidence: rng.gen_range(75.0..=125.0),
+                confidence: rng.gen_range(0.5..=1.0),
             },
         }
     }

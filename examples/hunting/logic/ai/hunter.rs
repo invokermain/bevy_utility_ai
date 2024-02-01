@@ -1,6 +1,6 @@
 use crate::logic::ai::actions::{ActionEat, ActionHunt, ActionIdle, ActionRest};
-use crate::logic::ai::inputs::{distance_to, energy, food_availability, hunger};
-use crate::logic::food::{Carrion, Food, Grass};
+use crate::logic::ai::inputs::{carcass_availability, distance_to, energy, hunger};
+use crate::logic::food::Carrion;
 use crate::logic::water::Water;
 use bevy::app::App;
 use bevy::prelude::Component;
@@ -60,7 +60,7 @@ pub(crate) fn construct_hunter_ai(app: &mut App) {
                 )
                 // if there is no food in the area
                 .add_consideration(
-                    Consideration::simple(food_availability)
+                    Consideration::simple(carcass_availability)
                         .with_response_curve(Linear::new(-1.0).shifted(0.0, 1.0)),
                 )
                 // if we have energy

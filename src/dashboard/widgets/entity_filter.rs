@@ -20,7 +20,7 @@ impl<'w> WidgetSystem for EntityFilterList<'w> {
         world: &mut World,
         state: &mut SystemState<Self>,
         ui: &mut Ui,
-        entities: Self::Args,
+        _: Self::Args,
     ) -> Self::Output {
         let mut state = state.get_mut(world);
         for entity in &state.dashboard_data.entities {

@@ -33,8 +33,12 @@ impl FilterDefinition {
     pub fn merge(&mut self, other: &FilterDefinition) -> FilterDefinition {
         match (self, other) {
             (FilterDefinition::Any, FilterDefinition::Any) => FilterDefinition::Any,
-            (FilterDefinition::Filtered(_), FilterDefinition::Any) => FilterDefinition::Any,
-            (FilterDefinition::Any, FilterDefinition::Filtered(_)) => FilterDefinition::Any,
+            (FilterDefinition::Filtered(_), FilterDefinition::Any) => {
+                FilterDefinition::Any
+            }
+            (FilterDefinition::Any, FilterDefinition::Filtered(_)) => {
+                FilterDefinition::Any
+            }
             (FilterDefinition::Filtered(x), FilterDefinition::Filtered(y)) => {
                 let mut joined = x.clone();
                 joined.extend(y.clone());

@@ -18,7 +18,7 @@ pub struct Food {
 
 #[derive(Component, Default)]
 pub struct Grass {
-    growth: u8
+    growth: u8,
 }
 
 #[derive(Component, Default)]
@@ -56,7 +56,10 @@ pub fn increase_hunger(mut q_hunger: Query<&mut Hunger>) {
     }
 }
 
-pub fn despawn_eaten_carrion(q_food: Query<(Entity, &Food), With<Carrion>>, mut commands: Commands) {
+pub fn despawn_eaten_carrion(
+    q_food: Query<(Entity, &Food), With<Carrion>>,
+    mut commands: Commands,
+) {
     for (entity, food) in q_food.iter() {
         if food.remaining == 0.0 {
             commands.entity(entity).despawn();
@@ -64,7 +67,10 @@ pub fn despawn_eaten_carrion(q_food: Query<(Entity, &Food), With<Carrion>>, mut 
     }
 }
 
-pub fn hide_eaten_grass(mut q_grass: Query<(Entity, &mut Grass, &Food, &mut Visibility)>, mut commands: Commands) {
+pub fn hide_eaten_grass(
+    mut q_grass: Query<(Entity, &mut Grass, &Food, &mut Visibility)>,
+    mut commands: Commands,
+) {
     for (entity, mut grass, food, mut visibility) in &mut q_grass {
         if food.remaining == 0.0 {
             grass.growth = 0;
@@ -74,7 +80,10 @@ pub fn hide_eaten_grass(mut q_grass: Query<(Entity, &mut Grass, &Food, &mut Visi
     }
 }
 
-pub fn regrow_grass(mut q_grass: Query<(Entity, &mut Grass, &mut Visibility), Without<Food>>, mut commands: Commands) {
+pub fn regrow_grass(
+    mut q_grass: Query<(Entity, &mut Grass, &mut Visibility), Without<Food>>,
+    mut commands: Commands,
+) {
     for (entity, mut grass, mut visibility) in &mut q_grass {
         grass.growth += 1;
 
@@ -82,7 +91,6 @@ pub fn regrow_grass(mut q_grass: Query<(Entity, &mut Grass, &mut Visibility), Wi
             *visibility = Visibility::Visible;
             commands.entity(entity).insert(Food { remaining: 50.0 });
         }
-    
     }
 }
 

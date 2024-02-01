@@ -6,7 +6,7 @@ pub trait InputTransform: Send + Sync + PartialEq {
     fn transform(&self, input: f32) -> f32;
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum ResponseCurve {
     LinearCurve(Linear),
     PolynomialCurve(Polynomial),

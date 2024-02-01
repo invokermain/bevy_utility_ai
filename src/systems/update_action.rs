@@ -46,7 +46,8 @@ pub(crate) fn update_actions_sys(world: &mut World) {
 
                     // Add the new action component
                     if let Some(registration) = registry_read.get(new_action) {
-                        let reflect_default = registration.data::<ReflectDefault>().unwrap();
+                        let reflect_default =
+                            registration.data::<ReflectDefault>().unwrap();
                         let reflect_component =
                             registration.data::<ReflectComponent>().unwrap();
                         reflect_component

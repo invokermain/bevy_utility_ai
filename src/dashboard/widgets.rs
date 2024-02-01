@@ -7,6 +7,8 @@ mod root_entity_selection_panel;
 mod root_header_panel;
 mod root_observer_panel;
 mod select_ai_definition;
+mod select_view_mode;
+mod view_decision;
 
 pub(crate) use base::WorldWidgetSystemExt;
 pub(crate) use root_entity_selection_panel::EntitySelectPanel;

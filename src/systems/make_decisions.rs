@@ -76,7 +76,8 @@ pub(crate) fn make_decisions_sys(
                         .clamp(0.0, 1.0);
                     if consideration_score.is_nan() {
                         warn!(
-                            "response curve returned NaN for input {:.2}",
+                            "consideration {} response curve returned NaN for input {:.2}",
+                            consideration.name,
                             consideration_input_score
                         );
                         consideration_score = 0.0;

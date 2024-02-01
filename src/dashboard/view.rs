@@ -19,7 +19,7 @@ pub(crate) struct DashboardState {
 }
 
 impl DashboardState {
-    pub(crate) fn reset(&mut self, _dashboard_data: &DashboardData) {
+    pub(crate) fn reset(&mut self) {
         self.selected_entities = HashSet::new();
     }
 }
@@ -61,10 +61,11 @@ pub(crate) fn layout(
     world.root_widget_with::<ObserverPanel>("observer_panel", ());
 }
 
-#[derive(Eq, PartialEq, Debug, Default)]
+#[derive(Eq, PartialEq, Debug, Default, Clone, Copy)]
 pub(crate) enum ViewMode {
     #[default]
     Decisions,
     Considerations,
     Inputs,
+    ResponseCurves,
 }

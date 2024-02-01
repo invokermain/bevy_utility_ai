@@ -52,7 +52,8 @@ pub(crate) fn parse_input(input: &FnArg) -> Result<ParsedInput, Error> {
                 Type::Path(path) => {
                     if let Some(first_segment) = path.path.segments.first() {
                         let arg_type_str = first_segment.ident.to_string();
-                        if ACCEPTED_EXTRA_SIGNATURE_TYPES.contains(&arg_type_str.as_str()) {
+                        if ACCEPTED_EXTRA_SIGNATURE_TYPES.contains(&arg_type_str.as_str())
+                        {
                             (SigType::Extra, path.to_token_stream())
                         } else if &arg_type_str == "Entity" {
                             (SigType::Entity, path.to_token_stream())
@@ -119,7 +120,9 @@ pub(crate) fn parse_tuple_input(input: &FnArg) -> Result<ParsedTupleInput, Error
                                         .path
                                         .segments
                                         .last()
-                                        .unwrap_or_else(|| panic!("What? {:?}", path.path))
+                                        .unwrap_or_else(|| {
+                                            panic!("What? {:?}", path.path)
+                                        })
                                         .clone(),
                                     _ => {
                                         return Err(Error::new_spanned(
@@ -131,7 +134,9 @@ pub(crate) fn parse_tuple_input(input: &FnArg) -> Result<ParsedTupleInput, Error
                             }
                             Type::Path(path) => {
                                 if let Some(first_segment) = path.path.segments.first() {
-                                    if first_segment.ident.to_string().as_str() == "Entity" {
+                                    if first_segment.ident.to_string().as_str()
+                                        == "Entity"
+                                    {
                                         arg_types.push(first_segment.clone());
                                     } else {
                                         return Err(Error::new_spanned(

@@ -2,14 +2,14 @@ use super::base::WidgetSystem;
 use crate::dashboard::data::DashboardData;
 use crate::dashboard::view::DashboardState;
 use crate::dashboard::view_models::ViewAIDefinition;
-use bevy::ecs::system::{ResMut, SystemParam, SystemState};
+use bevy::ecs::system::{Res, ResMut, SystemParam, SystemState};
 use bevy::ecs::world::World;
 use bevy_egui::egui;
 use bevy_egui::egui::Ui;
 
 #[derive(SystemParam)]
 pub(crate) struct SelectAIDefinition<'w> {
-    dashboard_data: ResMut<'w, DashboardData>,
+    dashboard_data: Res<'w, DashboardData>,
     dashboard_state: ResMut<'w, DashboardState>,
 }
 
@@ -21,7 +21,7 @@ impl<'w> WidgetSystem for SelectAIDefinition<'w> {
         world: &mut World,
         state: &mut SystemState<Self>,
         ui: &mut Ui,
-        entities: Self::Args,
+        _args: Self::Args,
     ) -> Self::Output {
         let SelectAIDefinition {
             mut dashboard_state,

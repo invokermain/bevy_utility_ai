@@ -58,11 +58,12 @@ impl<T: Component> DefineAI<T> {
                 ConsiderationType::Targeted => {
                     let filter_definition = match &decision.target_filters.is_empty() {
                         true => FilterDefinition::Any,
-                        false => {
-                            FilterDefinition::Filtered(vec![decision.target_filters.clone()])
-                        }
+                        false => FilterDefinition::Filtered(vec![decision
+                            .target_filters
+                            .clone()]),
                     };
-                    if let Some(req) = self.targeted_inputs.get_mut(&consideration.input) {
+                    if let Some(req) = self.targeted_inputs.get_mut(&consideration.input)
+                    {
                         req.target_filter = req.target_filter.merge(&filter_definition)
                     } else {
                         self.targeted_inputs.insert(
@@ -157,7 +158,7 @@ impl<T: Component> DefineAI<T> {
                 decisions: self.decisions,
                 simple_inputs: self.simple_inputs,
                 targeted_inputs: self.targeted_inputs,
-                default_intertia: self.default_intertia
+                default_intertia: self.default_intertia,
             };
             ai_definitions
                 .map
