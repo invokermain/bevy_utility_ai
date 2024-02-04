@@ -40,10 +40,10 @@ impl<'w> WidgetSystem for DecisionScoresPlot<'w> {
             ));
             for entity in &dashboard_state.selected_entities {
                 if let Some(scores) = dashboard_data.decision_scores.get(entity) {
-                    for ((input, target), scores_vec) in scores {
+                    for ((decision, target), scores_vec) in scores {
                         let name = match target {
-                            None => input.to_string(),
-                            Some(target) => format! {"{} - {:?}", input, target},
+                            None => decision.to_string(),
+                            Some(target) => format! {"{} - {:?}", decision, target},
                         };
                         plot_ui.line(
                             Line::new(PlotPoints::from_ys_f32(scores_vec.as_slices().0))

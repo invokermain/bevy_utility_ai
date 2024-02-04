@@ -118,13 +118,18 @@ impl<'w, 's> WidgetSystem for DecisionView<'w, 's> {
 
         input_values.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-        let x_l = input_values[input_values.len() / 10] as f64;
-        let x_u = input_values[(input_values.len() * 9) / 10] as f64;
+        let mut x_l = input_values[input_values.len() / 10] as f64;
+        let mut x_u = input_values[(input_values.len() * 9) / 10] as f64;
+
+        let base_unit = 5.0 * 10.0f64.powf(((x_u + x_l) / 2.0).log10().floor());
+
+        x_l = (x_l / base_unit).floor() * base_unit;
+        x_u = (x_u / base_unit).ceil() * base_unit;
 
         let points = PlotPoints::from_explicit_callback(
             move |x| (response_curve.transform(x as f32) as f64).clamp(0.0, 1.0),
             x_l..=x_u,
-            25,
+            50,
         );
 
         // calculate histogram

@@ -22,7 +22,7 @@ pub(crate) fn construct_prey_ai(app: &mut App) {
     // use DefineAI to build a set of decisions that will be ran for any entity with
     // the PreyAI marker component added.
     DefineAI::<PreyAI>::new()
-        .set_default_intertia(0.1)
+        .set_default_intertia(0.025)
         .add_decision(
             // Flee from...
             Decision::targeted::<ActionFlee>()
@@ -31,13 +31,13 @@ pub(crate) fn construct_prey_ai(app: &mut App) {
                 // when it is close
                 .add_consideration(
                     Consideration::targeted(distance_to).with_response_curve(
-                        Polynomial::new(-1.0 / 500.0f32.powi(2), 2.0).shifted(0.0, 1.0),
+                        Polynomial::new(-1.0 / 500.0f32.powi(2), 2.0).shifted(0.0, 1.2),
                     ),
                 )
                 // modulate by our personality
                 .add_consideration(
                     Consideration::simple(prey_confidence)
-                        .with_response_curve(Linear::new(-0.2).shifted(0.0, 1.0)),
+                        .with_response_curve(Linear::new(-0.1).shifted(0.0, 1.0)),
                 ),
         )
         .add_decision(
