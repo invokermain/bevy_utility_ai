@@ -6,6 +6,7 @@ use crate::logic::prey::PreyPersonality;
 use crate::logic::rest::Energy;
 use crate::logic::water::Thirst;
 use bevy::ecs::query::With;
+use bevy::math::{Rect, Vec3Swizzles};
 use bevy::prelude::{Query, Transform};
 use bevy_utility_ai_macros::{input_system, targeted_input_system};
 
@@ -57,14 +58,38 @@ pub(crate) fn distance_to(subject: (&Transform,), target: (&Transform,)) -> f32 
     subject_pos.distance(target_pos)
 }
 
-/// Threat Level at Target modulated by Prey's confidnce
+/// Threat Level at Target modulated by Prey's confidence.
 #[targeted_input_system]
 pub(crate) fn perceived_threat_level(
     subject: (&PreyPersonality,),
     target: (&Transform,),
     q_hunter: Query<&Transform, With<HunterAI>>,
 ) -> f32 {
-    let target_pos = target.0.translation;
-    let hunter_pos = q_hunter.single().translation;
+    let target_pos = target.0.translation.xy();
+    let hunter_pos = q_hunter.single().translation.xy();
     (1.0 - target_pos.distance(hunter_pos) / 500.0).max(0.0) / subject.0.confidence
+}
+
+/// Is path blocked by the Hunter, returns 1.0 if it is else 0.0
+#[targeted_input_system]
+pub(crate) fn is_path_blocked(
+    subject: (&Transform,),
+    target: (&Transform,),
+    q_hunter: Query<&Transform, With<HunterAI>>,
+) -> f32 {
+    let subject_pos = subject.0.translation.xy();
+    let target_pos = target.0.translation.xy();
+    let hunter_pos = q_hunter.single().translation.xy();
+    let cross_axis = (target_pos - subject_pos).perp().normalize();
+
+    let bounding_box = Rect::from_corners(
+        target_pos + cross_axis * 50.0,
+        subject_pos - cross_axis * 50.0,
+    );
+
+    if bounding_box.contains(hunter_pos) {
+        1.0
+    } else {
+        0.0
+    }
 }

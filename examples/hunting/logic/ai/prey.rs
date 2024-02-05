@@ -11,7 +11,7 @@ use crate::logic::water::Water;
 use super::actions::{ActionDrink, ActionEat, ActionFlee, ActionHerd, ActionIdle};
 use super::hunter::HunterAI;
 use super::inputs::{
-    distance_to, hunger, perceived_threat_level, prey_confidence, thirst,
+    distance_to, hunger, is_path_blocked, perceived_threat_level, prey_confidence, thirst,
 };
 
 #[derive(Component)]
@@ -61,6 +61,11 @@ pub(crate) fn construct_prey_ai(app: &mut App) {
                     Consideration::targeted(perceived_threat_level)
                         .with_response_curve(Linear::new(-1.0).shifted(0.0, 1.0)),
                 )
+                // & ignore targets if hunter is in the way
+                .add_consideration(
+                    Consideration::targeted(is_path_blocked)
+                        .with_response_curve(Linear::new(-1.0).shifted(0.0, 1.0)),
+                )
                 // set a base score of less than one so that we always prefer fleeing the hunter
                 .set_base_score(0.90),
         )
@@ -79,6 +84,11 @@ pub(crate) fn construct_prey_ai(app: &mut App) {
                 // & prefer targets that have lower threat level
                 .add_consideration(
                     Consideration::targeted(perceived_threat_level)
+                        .with_response_curve(Linear::new(-1.0).shifted(0.0, 1.0)),
+                )
+                // & ignore targets if hunter is in the way
+                .add_consideration(
+                    Consideration::targeted(is_path_blocked)
                         .with_response_curve(Linear::new(-1.0).shifted(0.0, 1.0)),
                 )
                 // & prefer if we are hungry

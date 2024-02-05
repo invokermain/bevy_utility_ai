@@ -1,9 +1,12 @@
-use crate::logic::ai::actions::ActionHunt;
 use crate::logic::ai::hunter::HunterAI;
 use crate::logic::ai::prey::PreyAI;
 use crate::logic::rest::Energy;
-use bevy::prelude::{
-    Commands, Entity, Event, EventWriter, Query, Transform, Vec2, With, Without,
+use crate::{layers::ACTOR_LAYER, logic::ai::actions::ActionHunt};
+use bevy::{
+    math::Vec3Swizzles,
+    prelude::{
+        Commands, Entity, Event, EventWriter, Query, Transform, Vec2, With, Without,
+    },
 };
 use bevy_utility_ai::ActionTarget;
 
@@ -15,18 +18,18 @@ pub struct PreyKilledEvent {
 
 pub fn hunt(
     mut q_hunter: Query<
-        (&Transform, &mut Energy, &ActionTarget),
+        (&mut Transform, &mut Energy, &ActionTarget),
         (With<ActionHunt>, With<HunterAI>),
     >,
     q_prey: Query<&Transform, (Without<HunterAI>, With<PreyAI>)>,
     mut commands: Commands,
     mut ev_prey_killed: EventWriter<PreyKilledEvent>,
 ) {
-    for (hunter_transform, mut energy, target_entity) in q_hunter.iter_mut() {
-        let position = &mut hunter_transform.translation.truncate();
+    for (mut hunter_transform, mut energy, target_entity) in q_hunter.iter_mut() {
+        let position = &mut hunter_transform.translation.xy();
 
         if let Ok(target) = q_prey.get(target_entity.target) {
-            let target_position = target.translation.truncate();
+            let target_position = target.translation.xy();
 
             // if we are close enough kill the prey
             if target_position.distance(*position) <= 7.5 {
@@ -39,7 +42,8 @@ pub fn hunt(
             // otherwise move towards our prey
             else {
                 let movement_vector = target_position - *position;
-                *position += movement_vector.normalize() * 7.5;
+                hunter_transform.translation +=
+                    (movement_vector.normalize() * 7.5).extend(ACTOR_LAYER);
             }
 
             energy.value = (energy.value - 0.5).max(0.0);

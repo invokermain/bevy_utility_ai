@@ -1,5 +1,6 @@
 mod bundles;
 mod camera;
+mod layers;
 mod logic;
 mod ui;
 
@@ -20,6 +21,7 @@ use bevy_utility_ai::plugin::{UtilityAIPlugin, UtilityAISet};
 use bevy_utility_ai::systems::make_decisions::EntityActionChangedEvent;
 use bundles::GrassBundle;
 use camera::{mouse_control, scroll_zoom};
+use layers::{ACTOR_LAYER, RESOURCE_LAYER};
 use logic::ai::prey::construct_prey_ai;
 use logic::food::{hide_eaten_grass, regrow_grass};
 use logic::hunt::hunt;
@@ -154,7 +156,7 @@ fn worldgen(
         MaterialMesh2dBundle {
             mesh: pixel_mesh.clone().into(),
             material: materials.add(ColorMaterial::from(Color::WHITE)),
-            transform: Transform::from_translation(Vec3::new(0., 0., 3.)),
+            transform: Transform::from_translation(Vec3::new(0., 0., ACTOR_LAYER)),
             ..default()
         },
         HunterAI {}, // this component enables the HunterAI behaviour
@@ -177,7 +179,7 @@ fn worldgen(
         MaterialMesh2dBundle {
             mesh: meshes.add(shape::Circle::new(25.).into()).into(),
             material: materials.add(ColorMaterial::from(Color::BLUE)),
-            transform: Transform::from_translation(Vec3::new(250., 250., 1.)),
+            transform: Transform::from_translation(Vec3::new(250., 250., RESOURCE_LAYER)),
             ..default()
         },
         Water {},
@@ -186,7 +188,11 @@ fn worldgen(
         MaterialMesh2dBundle {
             mesh: meshes.add(shape::Circle::new(25.).into()).into(),
             material: materials.add(ColorMaterial::from(Color::BLUE)),
-            transform: Transform::from_translation(Vec3::new(-250., -250., 1.)),
+            transform: Transform::from_translation(Vec3::new(
+                -250.,
+                -250.,
+                RESOURCE_LAYER,
+            )),
             ..default()
         },
         Water {},

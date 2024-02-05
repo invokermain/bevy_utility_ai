@@ -176,13 +176,14 @@ pub(super) fn generate_histogram(values: &Vec<f32>) -> Option<(Vec<(f64, f64)>, 
 }
 
 mod tests {
-    use super::generate_histogram;
+    use super::*;
 
     #[test]
     fn test_generate_histogram() {
         let hist = generate_histogram(&Vec::from_iter((0..100).map(|x| x as f32 / 99.0)));
+        let (bins, _bin_width) = hist.unwrap();
 
-        for (bin, _) in hist.unwrap() {
+        for bin in &bins {
             assert!((bin.1 - 0.10).abs() < 0.01);
         }
     }

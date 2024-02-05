@@ -8,6 +8,7 @@ use bevy::render::mesh::{shape, Mesh};
 use bevy::sprite::{ColorMaterial, MaterialMesh2dBundle};
 use bevy::transform::components::Transform;
 
+use crate::layers::RESOURCE_LAYER;
 use crate::logic::food::{Food, Grass};
 
 #[derive(Bundle)]
@@ -27,7 +28,7 @@ impl GrassBundle {
             mesh: MaterialMesh2dBundle {
                 mesh: meshes.add(shape::Box::new(25., 25., 0.).into()).into(),
                 material: materials.add(ColorMaterial::from(Color::DARK_GREEN)),
-                transform: Transform::from_translation(position.extend(2.)),
+                transform: Transform::from_translation(position.extend(RESOURCE_LAYER)),
                 ..default()
             },
             grass: Grass::default(),

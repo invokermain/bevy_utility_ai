@@ -142,17 +142,18 @@ pub(crate) fn record_input_scores(
             scores_vec.make_contiguous();
         }
 
-        let scores_vec = dashboard_data
-            .consideration_input_scores
-            .entry(event.input.clone())
-            .or_insert(VecDeque::new());
+        // add to consideration_input_scores if the entity is of the selected ai type
+        if dashboard_data.entities.contains(&event.entity) {
+            let scores_vec = dashboard_data
+                .consideration_input_scores
+                .entry(event.input.clone())
+                .or_insert(VecDeque::new());
 
-        if scores_vec.len() > 1000 {
-            scores_vec.pop_front();
+            if scores_vec.len() > 1000 {
+                scores_vec.pop_front();
+            }
+            scores_vec.push_back(event.score);
         }
-        scores_vec.push_back(event.score);
-        // as we are plotting slices over this vec we must make it contiguous
-        scores_vec.make_contiguous();
     }
 }
 
