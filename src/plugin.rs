@@ -15,9 +15,11 @@ use bevy::prelude::{
 
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
 pub enum UtilityAISet {
+    Prepare,
     CalculateInputs,
     MakeDecisions,
     UpdateActions,
+    Tidyup,
 }
 
 #[derive(Resource)]

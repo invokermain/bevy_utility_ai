@@ -1,7 +1,7 @@
-use crate::logic::ai::hunter::HunterAI;
-use crate::logic::ai::prey::PreyAI;
-use crate::logic::rest::Energy;
-use crate::{layers::ACTOR_LAYER, logic::ai::actions::ActionHunt};
+use crate::game::ai::hunter::HunterAI;
+use crate::game::ai::prey::PreyAI;
+use crate::game::systems::rest::Energy;
+use crate::{game::ai::actions::ActionHunt, layers::ACTOR_LAYER};
 use bevy::{
     math::Vec3Swizzles,
     prelude::{

@@ -1,4 +1,4 @@
-use crate::logic::ai::actions::{ActionIdle, ActionRest};
+use crate::game::ai::actions::{ActionIdle, ActionRest};
 use bevy::math::Vec3;
 use bevy::prelude::{Component, Query, With};
 use bevy::transform::components::Transform;

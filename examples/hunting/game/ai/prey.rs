@@ -1,3 +1,4 @@
+use crate::game::entities::grass::Grass;
 use bevy::app::App;
 use bevy::prelude::Component;
 use bevy_utility_ai::considerations::Consideration;
@@ -5,13 +6,14 @@ use bevy_utility_ai::decisions::Decision;
 use bevy_utility_ai::define_ai::DefineAI;
 use bevy_utility_ai::response_curves::{Linear, Polynomial};
 
-use crate::logic::food::{Food, Grass};
-use crate::logic::water::Water;
+use crate::game::systems::food::Food;
+use crate::game::systems::water::Water;
 
 use super::actions::{ActionDrink, ActionEat, ActionFlee, ActionHerd, ActionIdle};
 use super::hunter::HunterAI;
 use super::inputs::{
-    distance_to, hunger, is_path_blocked, perceived_threat_level, prey_confidence, thirst,
+    distance_to, food_appeal, hunger, is_path_blocked, perceived_threat_level,
+    prey_confidence, thirst,
 };
 
 #[derive(Component)]
@@ -85,6 +87,11 @@ pub(crate) fn construct_prey_ai(app: &mut App) {
                 .add_consideration(
                     Consideration::targeted(perceived_threat_level)
                         .with_response_curve(Linear::new(-1.0).shifted(0.0, 1.0)),
+                )
+                // & prefer targets that are more appealing
+                .add_consideration(
+                    Consideration::targeted(food_appeal)
+                        .with_response_curve(Linear::new(1.0)),
                 )
                 // & ignore targets if hunter is in the way
                 .add_consideration(

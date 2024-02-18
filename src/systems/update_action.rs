@@ -50,8 +50,11 @@ pub(crate) fn update_actions_sys(world: &mut World) {
                             registration.data::<ReflectDefault>().unwrap();
                         let reflect_component =
                             registration.data::<ReflectComponent>().unwrap();
-                        reflect_component
-                            .insert(&mut entity_mut, reflect_default.default().as_ref());
+                        reflect_component.insert(
+                            &mut entity_mut,
+                            reflect_default.default().as_ref(),
+                            &registry_read,
+                        );
                         debug!("Added Action {:?}", new_action);
                     } else {
                         panic!(

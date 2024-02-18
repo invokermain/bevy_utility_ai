@@ -8,31 +8,29 @@ use bevy::render::mesh::{shape, Mesh};
 use bevy::sprite::{ColorMaterial, MaterialMesh2dBundle};
 use bevy::transform::components::Transform;
 
+use crate::game::systems::water::Water;
 use crate::layers::RESOURCE_LAYER;
-use crate::logic::food::{Food, Grass};
 
 #[derive(Bundle)]
-pub struct GrassBundle {
-    grass: Grass,
+pub struct WaterSourceBundle {
     mesh: MaterialMesh2dBundle<ColorMaterial>,
-    food: Food,
+    water: Water,
 }
 
-impl GrassBundle {
+impl WaterSourceBundle {
     pub fn new(
         position: Vec2,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<ColorMaterial>>,
-    ) -> GrassBundle {
+    ) -> Self {
         Self {
             mesh: MaterialMesh2dBundle {
-                mesh: meshes.add(shape::Box::new(25., 25., 0.).into()).into(),
-                material: materials.add(ColorMaterial::from(Color::DARK_GREEN)),
+                mesh: meshes.add(shape::Circle::new(25.).into()).into(),
+                material: materials.add(ColorMaterial::from(Color::BLUE)),
                 transform: Transform::from_translation(position.extend(RESOURCE_LAYER)),
                 ..default()
             },
-            grass: Grass::default(),
-            food: Food { remaining: 100.0 },
+            water: Water {},
         }
     }
 }

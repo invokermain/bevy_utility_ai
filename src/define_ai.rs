@@ -117,8 +117,8 @@ impl<T: Component> DefineAI<T> {
             app.add_systems(
                 schedule_label,
                 (
-                    ensure_entity_has_ai_meta::<T>,
-                    handle_ai_marker_removed::<T>,
+                    ensure_entity_has_ai_meta::<T>.in_set(UtilityAISet::Prepare),
+                    handle_ai_marker_removed::<T>.in_set(UtilityAISet::Tidyup),
                 ),
             );
 

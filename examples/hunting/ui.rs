@@ -1,7 +1,7 @@
-use crate::logic::ai::hunter::HunterAI;
-use crate::logic::food::Hunger;
-use crate::logic::rest::Energy;
-use crate::logic::water::Thirst;
+use crate::game::ai::hunter::HunterAI;
+use crate::game::systems::food::Hunger;
+use crate::game::systems::rest::Energy;
+use crate::game::systems::water::Thirst;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::hierarchy::BuildChildren;
 use bevy::prelude::*;

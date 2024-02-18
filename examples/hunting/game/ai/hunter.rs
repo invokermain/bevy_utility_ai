@@ -1,7 +1,7 @@
-use crate::logic::ai::actions::{ActionEat, ActionHunt, ActionIdle, ActionRest};
-use crate::logic::ai::inputs::{carcass_availability, distance_to, energy, hunger};
-use crate::logic::food::Carrion;
-use crate::logic::water::Water;
+use crate::game::ai::actions::{ActionEat, ActionHunt, ActionIdle, ActionRest};
+use crate::game::ai::inputs::{carcass_availability, distance_to, energy, hunger};
+use crate::game::entities::carrion::Carrion;
+use crate::game::systems::water::Water;
 use bevy::app::App;
 use bevy::prelude::Component;
 use bevy_utility_ai::considerations::Consideration;

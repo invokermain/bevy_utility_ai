@@ -1,3 +1,6 @@
+use crate::game::ai::actions::{ActionFlee, ActionHerd};
+use crate::game::ai::hunter::HunterAI;
+use crate::game::ai::prey::PreyAI;
 use bevy::asset::Assets;
 use bevy::ecs::bundle::Bundle;
 use bevy::ecs::component::Component;
@@ -14,9 +17,6 @@ use bevy::transform::components::Transform;
 use bevy_utility_ai::ActionTarget;
 use rand::Rng;
 
-use super::ai::actions::{ActionFlee, ActionHerd};
-use super::ai::hunter::HunterAI;
-use super::ai::prey::PreyAI;
 use super::food::Hunger;
 use super::water::Thirst;
 

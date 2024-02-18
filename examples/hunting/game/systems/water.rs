@@ -1,4 +1,4 @@
-use super::ai::actions::ActionDrink;
+use crate::game::ai::actions::ActionDrink;
 use bevy::prelude::*;
 use bevy_utility_ai::ActionTarget;
 

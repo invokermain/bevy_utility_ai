@@ -1,10 +1,11 @@
 // Define simple input system, this input is calculated for each entity that has the
 // required components.
 
-use crate::logic::food::{Carrion, Food, Hunger};
-use crate::logic::prey::PreyPersonality;
-use crate::logic::rest::Energy;
-use crate::logic::water::Thirst;
+use crate::game::entities::carrion::Carrion;
+use crate::game::systems::food::{Food, Hunger};
+use crate::game::systems::prey::PreyPersonality;
+use crate::game::systems::rest::Energy;
+use crate::game::systems::water::Thirst;
 use bevy::ecs::query::With;
 use bevy::math::{Rect, Vec3Swizzles};
 use bevy::prelude::{Query, Transform};
@@ -92,4 +93,13 @@ pub(crate) fn is_path_blocked(
     } else {
         0.0
     }
+}
+
+/// Defines how appealing the food source is, e.g. how much is remaining + how busy is it.
+/// Return 0.0 -> 1.0;
+#[targeted_input_system]
+pub(crate) fn food_appeal(target: (&Food,)) -> f32 {
+    let food = target.0;
+    (food.remaining / 25.0).max(1.0) * 0.5
+        + (1.0 - food.current_eaters as f32 / 6.0).min(0.0) * 0.5
 }
