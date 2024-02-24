@@ -2,7 +2,7 @@ use crate::dashboard::data::{DashboardData, GRAPH_HISTORY_SIZE};
 use crate::dashboard::view::DashboardState;
 use bevy::ecs::system::{Res, SystemParam, SystemState};
 use bevy::ecs::world::World;
-use bevy_egui::egui::Ui;
+use bevy_egui::egui::{Ui, Vec2b};
 use egui_plot::{Corner, Legend, Line, Plot, PlotPoints};
 
 use super::base::WidgetSystem;
@@ -29,10 +29,8 @@ impl<'w> WidgetSystem for InputScoresPlot<'w> {
         } = state.get(world);
         let input_scores_plot = Plot::new("input_scores")
             .legend(Legend::default().position(Corner::LeftTop))
-            .auto_bounds_x()
-            .auto_bounds_y()
+            .auto_bounds(Vec2b::TRUE)
             .include_x(GRAPH_HISTORY_SIZE as f64)
-            .auto_bounds_y()
             .allow_drag(false)
             .allow_scroll(false)
             .allow_zoom(false);

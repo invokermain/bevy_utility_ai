@@ -2,9 +2,10 @@ use crate::game::systems::food::Food;
 use crate::game::systems::hunt::PreyKilledEvent;
 use crate::layers::ITEM_LAYER;
 use bevy::asset::Assets;
+use bevy::math::primitives::Circle;
 use bevy::prelude::{
-    default, shape, Color, ColorMaterial, Commands, Component, Entity, EventReader, Mesh,
-    Query, ResMut, Transform, With,
+    default, Color, ColorMaterial, Commands, Component, Entity, EventReader, Mesh, Query,
+    ResMut, Transform, With,
 };
 use bevy::sprite::MaterialMesh2dBundle;
 
@@ -19,12 +20,13 @@ pub fn spawn_carrion_on_kill(
 ) {
     for prey_killed in er_prey_killed.read() {
         let position = prey_killed.position;
+        commands.entity(prey_killed.entity).despawn();
         commands.spawn((
             Food::new(100.0),
             Carrion::default(),
             MaterialMesh2dBundle {
                 material: materials.add(ColorMaterial::from(Color::BLACK)),
-                mesh: meshes.add(shape::Circle::new(5.).into()).into(),
+                mesh: meshes.add(Circle::new(5.)).into(),
                 transform: Transform::from_translation(position.extend(ITEM_LAYER)),
                 ..default()
             },

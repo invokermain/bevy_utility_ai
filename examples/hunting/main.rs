@@ -2,6 +2,7 @@ mod camera;
 mod game;
 mod layers;
 mod ui;
+mod utils;
 
 use crate::game::ai::hunter::construct_hunter_ai;
 use crate::game::systems::food::{decrement_food_eaters, eat, increase_hunger};
@@ -21,9 +22,10 @@ use game::entities::carrion::{despawn_eaten_carrion, spawn_carrion_on_kill};
 use game::entities::grass::GrassBundle;
 use game::entities::grass::{hide_eaten_grass, regrow_grass};
 use game::entities::hunter::HunterBundle;
+use game::entities::prey::PreyBundle;
 use game::entities::water_source::WaterSourceBundle;
 use game::systems::hunt::hunt;
-use game::systems::prey::{flee, herd, remove_flee_to, PreyBundle};
+use game::systems::prey::{flee, herd, remove_flee_to};
 use game::systems::rest::{idle, rest};
 use game::systems::water::{drink, increase_thirst};
 use rand::Rng;
@@ -32,6 +34,7 @@ use ui::{
     draw_fence, energy_text_update_system, fps_text_update_system,
     hunger_text_update_system, setup_fps_counter, thirst_text_update_system,
 };
+use utils::animations::animate_sprite;
 
 // This system listens to EntityActionChangedEvent events and logs them to give us some
 // visibility.
@@ -47,7 +50,7 @@ fn log_ai_updated_action(mut e_update_action: EventReader<EntityActionChangedEve
 fn main() {
     let mut app = App::new();
 
-    // Setup the App
+    // Set up the App
     app.add_plugins((
         DefaultPlugins
             .set(LogPlugin {
@@ -63,6 +66,7 @@ fn main() {
                 }),
                 ..default()
             })
+            .set(ImagePlugin::default_nearest())
             .set(AssetPlugin {
                 file_path: "examples/hunting/assets".to_string(),
                 ..default()
@@ -70,7 +74,7 @@ fn main() {
         FrameTimeDiagnosticsPlugin,
     ));
 
-    // Setup the camera, ui and other game systems
+    // Set up the camera, ui and other game systems
     app.add_systems(Startup, (camera::setup_camera, setup_fps_counter));
     app.add_systems(
         Update,
@@ -83,6 +87,7 @@ fn main() {
             energy_text_update_system,
             thirst_text_update_system,
             draw_fence,
+            animate_sprite,
         ),
     );
 
@@ -118,7 +123,6 @@ fn main() {
                 rest,
                 increase_hunger,
                 increase_thirst,
-                spawn_carrion_on_kill,
                 eat,
                 idle,
                 flee,
@@ -129,7 +133,7 @@ fn main() {
                 regrow_grass,
                 decrement_food_eaters,
             ),
-            (remove_flee_to,),
+            (remove_flee_to, spawn_carrion_on_kill),
         )
             .chain(),
     );
@@ -148,14 +152,19 @@ fn worldgen(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     // Spawn our hunter
-    commands.spawn(HunterBundle::new(Vec2::ZERO, asset_server));
+    commands.spawn(HunterBundle::new(
+        Vec2::ZERO,
+        &asset_server,
+        &mut texture_atlas_layouts,
+    ));
 
     // Spawn some prey
     commands.spawn_batch(
         (0..25)
-            .map(|_| PreyBundle::new(&mut meshes, &mut materials))
+            .map(|_| PreyBundle::new(&asset_server, &mut texture_atlas_layouts))
             .collect::<Vec<_>>(),
     );
 

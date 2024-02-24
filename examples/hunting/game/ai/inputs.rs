@@ -2,8 +2,8 @@
 // required components.
 
 use crate::game::entities::carrion::Carrion;
+use crate::game::entities::prey::PreyPersonality;
 use crate::game::systems::food::{Food, Hunger};
-use crate::game::systems::prey::PreyPersonality;
 use crate::game::systems::rest::Energy;
 use crate::game::systems::water::Thirst;
 use bevy::ecs::query::With;

@@ -1,10 +1,11 @@
 use crate::game::systems::food::Food;
 use crate::layers::RESOURCE_LAYER;
 use bevy::asset::Assets;
+use bevy::math::primitives::Cuboid;
 use bevy::math::Vec2;
 use bevy::prelude::{
-    default, shape, Bundle, Color, ColorMaterial, Commands, Component, Entity, Mesh,
-    Query, ResMut, Transform, Visibility, Without,
+    default, Bundle, Color, ColorMaterial, Commands, Component, Entity, Mesh, Query,
+    ResMut, Transform, Visibility, Without,
 };
 use bevy::sprite::MaterialMesh2dBundle;
 
@@ -55,7 +56,7 @@ impl GrassBundle {
     ) -> GrassBundle {
         Self {
             mesh: MaterialMesh2dBundle {
-                mesh: meshes.add(shape::Box::new(25., 25., 0.).into()).into(),
+                mesh: meshes.add(Cuboid::new(25., 25., 0.)).into(),
                 material: materials.add(ColorMaterial::from(Color::DARK_GREEN)),
                 transform: Transform::from_translation(position.extend(RESOURCE_LAYER)),
                 ..default()

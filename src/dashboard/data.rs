@@ -84,7 +84,7 @@ pub(crate) fn sync_dashboard_data(
                 .iter()
                 .filter(|archetype| archetype.contains(select_ai_definition_component_id))
                 .flat_map(|archetype| archetype.entities())
-                .map(|archetype_entity| archetype_entity.entity())
+                .map(|archetype_entity| archetype_entity.id())
                 .collect();
 
             dashboard_data.entities.sort();

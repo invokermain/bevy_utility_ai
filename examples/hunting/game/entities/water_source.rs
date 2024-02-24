@@ -1,10 +1,11 @@
 use bevy::asset::Assets;
 use bevy::ecs::bundle::Bundle;
 use bevy::ecs::system::ResMut;
+use bevy::math::primitives::Circle;
 use bevy::math::Vec2;
 use bevy::prelude::default;
 use bevy::render::color::Color;
-use bevy::render::mesh::{shape, Mesh};
+use bevy::render::mesh::Mesh;
 use bevy::sprite::{ColorMaterial, MaterialMesh2dBundle};
 use bevy::transform::components::Transform;
 
@@ -25,7 +26,7 @@ impl WaterSourceBundle {
     ) -> Self {
         Self {
             mesh: MaterialMesh2dBundle {
-                mesh: meshes.add(shape::Circle::new(25.).into()).into(),
+                mesh: meshes.add(Circle::new(25.)).into(),
                 material: materials.add(ColorMaterial::from(Color::BLUE)),
                 transform: Transform::from_translation(position.extend(RESOURCE_LAYER)),
                 ..default()

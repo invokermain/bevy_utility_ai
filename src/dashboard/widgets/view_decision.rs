@@ -175,6 +175,7 @@ pub(super) fn generate_histogram(values: &Vec<f32>) -> Option<(Vec<(f64, f64)>, 
     ))
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 

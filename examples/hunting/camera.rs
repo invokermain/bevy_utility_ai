@@ -1,9 +1,8 @@
-use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
-use bevy::input::Input;
+use bevy::input::ButtonInput;
 use bevy::math::Vec2;
 use bevy::prelude::{
-    default, Camera, Camera2d, Camera2dBundle, Color, Commands, EventReader, MouseButton,
+    default, Camera, Camera2dBundle, Color, Commands, EventReader, MouseButton,
     OrthographicProjection, Query, Res, Transform, Window, With,
 };
 use bevy::window::PrimaryWindow;
@@ -11,8 +10,9 @@ use bevy::window::PrimaryWindow;
 pub fn setup_camera(mut commands: Commands) {
     // Camera
     commands.spawn(Camera2dBundle {
-        camera_2d: Camera2d {
-            clear_color: ClearColorConfig::Custom(Color::LIME_GREEN),
+        camera: Camera {
+            clear_color: Color::rgb(0.97, 0.97, 0.97).into(),
+            ..default()
         },
         ..default()
     });
@@ -22,8 +22,11 @@ pub fn mouse_control(
     mut evr_motion: EventReader<MouseMotion>,
     mut q_camera: Query<(&mut Transform, &OrthographicProjection), With<Camera>>,
     primary_window: Query<&Window, With<PrimaryWindow>>,
-    input_mouse: Res<Input<MouseButton>>,
+    input_mouse: Res<ButtonInput<MouseButton>>,
 ) {
+    if primary_window.is_empty() {
+        return;
+    }
     // Pan camera if left button is pressed
     if input_mouse.pressed(MouseButton::Left) && !evr_motion.is_empty() {
         let (mut transform, projection) = q_camera.single_mut();
