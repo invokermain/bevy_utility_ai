@@ -2,7 +2,6 @@
 name = "bevy_utility_ai"
 version = "0.0.0"
 edition = "2021"
-authors = ["invokermain"]
 description = "A Utility AI library for the Bevy game engine"
 
 [workspace]
@@ -31,6 +30,12 @@ trybuild = "1"
 # this ensures we have the dashboard features in tests
 bevy_utility_ai = { path = ".", features = ["dashboard"] }
 bevy = { version = "*" }
+# used for the wolf example
+bevy_ecs_ldtk = { git = "https://github.com/theshortcut/bevy_ecs_ldtk.git", branch = "bevy-0.13" }
+pathfinding = "^4"
+
+[patch.crates-io]
+bevy_ecs_tilemap = { git = "https://github.com/rparrett/bevy_ecs_tilemap/", branch = "bevy13" }
 
 [lints.clippy]
 type_complexity = "allow"
