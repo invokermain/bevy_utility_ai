@@ -4,7 +4,7 @@ use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::window::WindowResolution;
-use bevy_ecs_ldtk::{LdtkPlugin, LdtkWorldBundle, LevelSelection};
+use bevy_ecs_ldtk::LdtkPlugin;
 use bevy_egui::EguiPlugin;
 
 use bevy_utility_ai::dashboard::UtilityAIDashboardPlugin;
@@ -23,7 +23,7 @@ use utils::animations::animate_sprite;
 use crate::game::ai::wolf::construct_hunter_ai;
 use crate::game::systems::food::{eat, increase_hunger};
 use crate::game::systems::hunt::PreyKilledEvent;
-use crate::game::systems::rest::calculate_idle_path;
+use crate::game::systems::rest::insert_idle_behaviour;
 use crate::level::WolfSceneSetupPlugin;
 use crate::ui::action_text_update_system;
 
@@ -117,7 +117,7 @@ fn main() {
                 increase_hunger,
                 increase_thirst,
                 eat,
-                calculate_idle_path,
+                insert_idle_behaviour,
                 idle,
                 drink,
                 despawn_eaten_carrion,

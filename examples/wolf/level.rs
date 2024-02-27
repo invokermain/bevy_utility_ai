@@ -3,7 +3,7 @@ use bevy::asset::{AssetServer, Assets};
 use bevy::math::Vec3;
 use bevy::prelude::{
     default, Added, Camera2dBundle, Commands, Entity, OrthographicProjection, Query, Res,
-    ResMut, Resource, Startup, TextureAtlasLayout, Transform, Update, Vec3Swizzles,
+    ResMut, Resource, Startup, TextureAtlasLayout, Transform, Update, Vec2, Vec3Swizzles,
 };
 use bevy::render::camera::ScalingMode;
 use bevy_ecs_ldtk::{
@@ -91,10 +91,14 @@ pub struct Walls {
 }
 
 impl Walls {
-    pub fn in_wall(&self, vertex: &(usize, usize)) -> bool {
+    pub fn in_wall(&self, point: &Vec2) -> bool {
+        let vertex = (
+            (point.x / GRID_SIZE).round() as usize,
+            (point.y / GRID_SIZE).round() as usize,
+        );
         vertex.0 >= MAP_TILE_WIDTH
             || vertex.1 >= MAP_TILE_HEIGHT
-            || self.grid.has_vertex(*vertex)
+            || self.grid.has_vertex(vertex)
     }
 }
 

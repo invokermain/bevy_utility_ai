@@ -4,7 +4,7 @@ use bevy::prelude::Component;
 use bevy_utility_ai::considerations::Consideration;
 use bevy_utility_ai::decisions::Decision;
 use bevy_utility_ai::define_ai::DefineAI;
-use bevy_utility_ai::response_curves::{Linear, Polynomial};
+use bevy_utility_ai::response_curves::{Linear, PiecewiseLinear, Polynomial};
 
 use crate::game::ai::actions::{ActionEat, ActionIdle, ActionRest};
 use crate::game::ai::inputs::{distance_to, energy, hunger};
@@ -99,18 +99,25 @@ pub(crate) fn construct_hunter_ai(app: &mut App) {
                 // when we are thirsty
                 .add_consideration(
                     Consideration::simple(thirst)
-                        .with_response_curve(Polynomial::new(1.05, 0.33)),
+                        .with_response_curve(Polynomial::new(1.05, 0.2)),
                 )
                 // & prefer closer targets
                 .add_consideration(
                     Consideration::targeted(distance_to).with_response_curve(
-                        Polynomial::new(-0.001, 1.0).shifted(0.0, 1.0),
+                        PiecewiseLinear::new([
+                            (0.0, 1.0),
+                            (32.0, 1.0),
+                            (48.0, 0.9),
+                            (256.0, 0.75),
+                        ]),
                     ),
                 ),
         )
         .add_decision(
             // Idle...
             Decision::simple::<ActionIdle>()
+                // reduce likelihood to idle slightly so it is more of a 'fallback'
+                .set_base_score(0.8)
                 // if we have high energy
                 .add_consideration(
                     Consideration::simple(energy)

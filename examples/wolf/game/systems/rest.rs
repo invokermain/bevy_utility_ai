@@ -1,12 +1,11 @@
+use crate::game::ai::actions::{ActionIdle, ActionRest};
+use crate::level::{Walls, GRID_SIZE};
+use crate::utils::pathfinding::{calculate_path, random_pathable_point, Path};
 use bevy::prelude::{
-    Commands, Component, Entity, Query, Res, Time, Vec2, Vec3Swizzles, With, Without,
+    Commands, Component, Entity, Query, Res, Time, Vec3Swizzles, With, Without,
 };
 use bevy::transform::components::Transform;
-use pathfinding::prelude::astar;
-use rand::Rng;
-
-use crate::game::ai::actions::{ActionIdle, ActionRest};
-use crate::level::{Walls, GRID_SIZE, HALF_GRID_SIZE, MAP_SIZE};
+use rand::{thread_rng, Rng};
 
 #[derive(Component)]
 pub struct Energy {
@@ -15,9 +14,27 @@ pub struct Energy {
 }
 
 #[derive(Component)]
-pub struct IdlePath {
-    pub path: Vec<(usize, usize)>,
-    pub current_index: usize,
+pub struct IdleBehaviour {
+    pub idle_time: f32,
+    pub idled_for: f32,
+}
+
+impl IdleBehaviour {
+    pub fn new() -> Self {
+        let mut rng = thread_rng();
+        Self {
+            idle_time: rng.gen_range(1.0..8.0),
+            idled_for: 0.0,
+        }
+    }
+
+    pub fn idled_for(&mut self, seconds: f32) {
+        self.idled_for += seconds;
+    }
+
+    pub fn is_finished_idling(&self) -> bool {
+        self.idled_for >= self.idle_time
+    }
 }
 
 pub fn rest(mut q_energy: Query<&mut Energy, With<ActionRest>>, r_time: Res<Time>) {
@@ -29,94 +46,69 @@ pub fn rest(mut q_energy: Query<&mut Energy, With<ActionRest>>, r_time: Res<Time
     }
 }
 
-pub fn calculate_idle_path(
-    q_position: Query<(Entity, &mut Transform), (With<ActionIdle>, Without<IdlePath>)>,
+pub fn insert_idle_behaviour(
+    q_position: Query<
+        (Entity, &mut Transform),
+        (With<ActionIdle>, Without<IdleBehaviour>),
+    >,
     r_walls: Res<Walls>,
     mut commands: Commands,
 ) {
-    let mut rng = rand::thread_rng();
     for (entity, start_position) in &q_position {
-        // add a random gate to make it seem like the wolf is 'waiting' sometimes
-        if rng.gen_range(0.0..1.0f32) < 0.99 {
-            continue;
-        }
+        let target_point = random_pathable_point(&r_walls);
 
-        let target_point: (usize, usize);
-        target_point = loop {
-            // pick a random point in the level
-            let try_point = (
-                (rng.gen_range(0.0..MAP_SIZE) / GRID_SIZE).round() as usize,
-                (rng.gen_range(0.0..MAP_SIZE) / GRID_SIZE).round() as usize,
-            );
+        let path =
+            calculate_path(&start_position.translation.xy(), &target_point, &r_walls);
 
-            // check point is not off limits
-            if !r_walls.in_wall(&try_point) {
-                break try_point;
-            }
-        };
-
-        let start_point = (
-            (start_position.translation.x / GRID_SIZE).round() as usize,
-            (start_position.translation.y / GRID_SIZE).round() as usize,
-        );
-        let mut path_grid = r_walls.grid.clone();
-        path_grid.invert();
-        let path_result = astar(
-            &start_point,
-            |point| {
-                path_grid
-                    .neighbours(*point)
-                    .into_iter()
-                    .map(|p| (p, 1usize))
-            },
-            |p| {
-                (((p.0.abs_diff(target_point.0) + p.1.abs_diff(target_point.1)) as f32)
-                    .sqrt()
-                    .floor()) as usize
-            },
-            |p| *p == target_point,
-        );
-
-        if path_result.is_some() {
-            commands.entity(entity).insert(IdlePath {
-                path: path_result.unwrap().0,
-                current_index: 1, // the path includes the start point
-            });
+        if path.is_some() {
+            commands
+                .entity(entity)
+                .insert((IdleBehaviour::new(), path.unwrap()));
         }
     }
 }
 
 pub fn idle(
     mut q_energy: Query<
-        (Entity, &mut Energy, &mut Transform, &mut IdlePath),
+        (
+            Entity,
+            &mut Energy,
+            &mut Transform,
+            &mut IdleBehaviour,
+            &mut Path,
+        ),
         With<ActionIdle>,
     >,
     mut commands: Commands,
     r_time: Res<Time>,
 ) {
-    for (entity, mut energy, mut transform, mut path) in q_energy.iter_mut() {
+    for (entity, mut energy, mut transform, mut idle_behaviour, mut path) in
+        q_energy.iter_mut()
+    {
         energy.value += 0.5 * r_time.delta_seconds();
 
         if energy.value >= energy.max {
             energy.value = energy.max
         }
 
-        let next_grid_point = path.path[path.current_index];
-        let next_point = Vec2::new(
-            next_grid_point.0 as f32 * GRID_SIZE,
-            next_grid_point.1 as f32 * GRID_SIZE,
-        );
+        let target_point = path.current_path_point();
+        let distance_to_target = transform.translation.xy().distance(target_point);
 
-        if transform.translation.xy().distance(next_point) <= HALF_GRID_SIZE {
-            if path.current_index + 1 == path.path.len() {
-                commands.entity(entity).remove::<IdlePath>();
+        if distance_to_target <= 1.0 {
+            if path.is_path_complete() {
+                // Idle when we get to the destination
+                if idle_behaviour.is_finished_idling() {
+                    commands.entity(entity).remove::<IdleBehaviour>();
+                } else {
+                    idle_behaviour.idled_for(r_time.delta_seconds());
+                }
             } else {
-                path.current_index += 1;
+                path.complete_path_point();
             }
         } else {
-            let direction = next_point - transform.translation.xy();
-            transform.translation +=
-                direction.normalize().extend(0.0) * GRID_SIZE * r_time.delta_seconds();
+            let direction = (target_point - transform.translation.xy()).normalize();
+            transform.translation += direction.extend(0.0)
+                * (GRID_SIZE * 1.25 * r_time.delta_seconds()).min(distance_to_target);
         }
     }
 }

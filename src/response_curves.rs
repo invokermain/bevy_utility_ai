@@ -6,11 +6,12 @@ pub trait InputTransform: Send + Sync + PartialEq {
     fn transform(&self, input: f32) -> f32;
 }
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone)]
 pub enum ResponseCurve {
     LinearCurve(Linear),
     PolynomialCurve(Polynomial),
     LogisticCurve(Logistic),
+    PiecewiseLinear(PiecewiseLinear),
 }
 
 impl InputTransform for ResponseCurve {
@@ -19,6 +20,7 @@ impl InputTransform for ResponseCurve {
             ResponseCurve::LinearCurve(x) => x.transform(input),
             ResponseCurve::PolynomialCurve(x) => x.transform(input),
             ResponseCurve::LogisticCurve(x) => x.transform(input),
+            ResponseCurve::PiecewiseLinear(x) => x.transform(input),
         }
     }
 }
@@ -94,6 +96,11 @@ impl Display for ResponseCurve {
                 write_float(f, r.y_shift)?;
                 write!(f, ")")
             }
+            ResponseCurve::PiecewiseLinear(r) => {
+                write!(f, "PiecewiseLinear(")?;
+                write!(f, "{:?}", r.points)?;
+                write!(f, ")")
+            }
         }
     }
 }
@@ -113,6 +120,12 @@ impl From<Polynomial> for ResponseCurve {
 impl From<Logistic> for ResponseCurve {
     fn from(value: Logistic) -> Self {
         Self::LogisticCurve(value)
+    }
+}
+
+impl From<PiecewiseLinear> for ResponseCurve {
+    fn from(value: PiecewiseLinear) -> Self {
+        Self::PiecewiseLinear(value)
     }
 }
 
@@ -211,5 +224,110 @@ impl Logistic {
 impl InputTransform for Logistic {
     fn transform(&self, input: f32) -> f32 {
         1.0 / (1.0 + self.k.powf(-input + self.x_shift)) + self.y_shift
+    }
+}
+
+/// Custom curve defined by linear interpolation between the set of given points.
+/// Out of bounds points to the left and right return the y value of the first or last
+/// point respectively.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PiecewiseLinear {
+    points: Vec<(f32, f32)>,
+}
+
+impl PiecewiseLinear {
+    /// Creates a new [`PiecewiseLinear`] from the given Iterator.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the iterator provides less than two points or the points are not
+    /// strictly monotonically increasing in their x coordinates.
+    pub fn new<'a>(points: impl IntoIterator<Item = (f32, f32)>) -> Self {
+        let points = Vec::from_iter(points);
+        if points.len() < 2 {
+            panic!("You must provide at least two points to the PiecewiseLinear")
+        }
+        let prev_x = f32::NEG_INFINITY;
+        for (x, _) in &points {
+            if *x <= prev_x {
+                panic!(
+                    "Expected points which are strictly monotonically increasing in x. \
+                    However, {x} is not greater than {prev_x}"
+                )
+            }
+        }
+        Self {
+            points: Vec::from_iter(points),
+        }
+    }
+}
+
+impl InputTransform for PiecewiseLinear {
+    fn transform(&self, input: f32) -> f32 {
+        let mut index = 0;
+        while index < self.points.len() {
+            let (left_x, left_y) = self.points[index];
+            let (right_x, right_y) = if index + 1 < self.points.len() {
+                self.points[index + 1]
+            } else {
+                (f32::INFINITY, left_y)
+            };
+
+            if input >= left_x && input < right_x {
+                return if left_y == right_y {
+                    left_y
+                } else {
+                    // interpolate
+                    let slope = (right_y - left_y) / (right_x - left_x);
+                    left_y + slope * (input - left_x)
+                };
+            } else {
+                index += 1;
+            }
+        }
+        // we are out of bounds on the left, return the first y value
+        self.points[0].1
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::response_curves::{InputTransform, PiecewiseLinear};
+
+    #[test]
+    fn test_piecewise_linear() {
+        let piece_wise_linear = PiecewiseLinear::new(vec![(0.0, 0.0), (1.0, 1.0)]);
+        assert_eq!(piece_wise_linear.transform(0.5), 0.5);
+    }
+
+    #[test]
+    fn test_piecewise_multi() {
+        let piece_wise_linear =
+            PiecewiseLinear::new(vec![(0.0, 0.0), (0.1, 0.5), (0.3, 0.7), (1.0, 0.0)]);
+        assert!(piece_wise_linear.transform(-0.1) - 0.0 <= 0.01);
+        assert!(piece_wise_linear.transform(0.0) - 0.0 <= 0.01);
+        assert!(piece_wise_linear.transform(0.1) - 0.5 <= 0.01);
+        assert!(piece_wise_linear.transform(0.2) - 0.6 <= 0.01);
+        assert!(piece_wise_linear.transform(0.3) - 0.7 <= 0.01);
+        assert!(piece_wise_linear.transform(0.4) - 0.6 <= 0.01);
+        assert!(piece_wise_linear.transform(0.5) - 0.5 <= 0.01);
+        assert!(piece_wise_linear.transform(0.6) - 0.4 <= 0.01);
+        assert!(piece_wise_linear.transform(0.7) - 0.3 <= 0.01);
+        assert!(piece_wise_linear.transform(0.8) - 0.2 <= 0.01);
+        assert!(piece_wise_linear.transform(0.9) - 0.1 <= 0.01);
+        assert!(piece_wise_linear.transform(1.0) - 0.0 <= 0.01);
+        assert!(piece_wise_linear.transform(1.1) - 0.0 <= 0.01);
+    }
+
+    #[test]
+    fn test_piecewise_linear_out_of_bounds_left() {
+        let piece_wise_linear = PiecewiseLinear::new(vec![(0.0, 0.0), (1.0, 1.0)]);
+        assert_eq!(piece_wise_linear.transform(-0.1), 0.0);
+    }
+
+    #[test]
+    fn test_piecewise_linear_out_of_bounds_right() {
+        let piece_wise_linear = PiecewiseLinear::new(vec![(0.0, 0.0), (1.0, 1.0)]);
+        assert_eq!(piece_wise_linear.transform(1.1), 1.0);
     }
 }
