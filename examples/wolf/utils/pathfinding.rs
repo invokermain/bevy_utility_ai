@@ -18,7 +18,7 @@ impl Path {
     }
 
     pub fn current_path_point(&self) -> Vec2 {
-        self.path[self.current_index].clone()
+        self.path[self.current_index]
     }
 
     pub fn complete_path_point(&mut self) {

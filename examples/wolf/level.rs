@@ -71,13 +71,13 @@ fn spawn_game_entities(
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     for (entity, entity_instance, transform) in new_entity_instances.iter() {
-        if entity_instance.identifier == "Wolf".to_string() {
+        if entity_instance.identifier == *"Wolf" {
             commands.entity(entity).insert(WolfBundle::new(
                 *transform,
                 &assets,
                 &mut texture_atlas_layouts,
             ));
-        } else if entity_instance.identifier == "WaterSource".to_string() {
+        } else if entity_instance.identifier == *"WaterSource" {
             commands
                 .entity(entity)
                 .insert(WaterSourceBundle::new(*transform));

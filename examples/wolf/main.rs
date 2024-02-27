@@ -21,6 +21,7 @@ use ui::{
 use utils::animations::animate_sprite;
 
 use crate::game::ai::wolf::construct_hunter_ai;
+use crate::game::entities::birds::{fly_to_point, spawn_birds_occasionally};
 use crate::game::systems::food::{eat, increase_hunger};
 use crate::game::systems::hunt::PreyKilledEvent;
 use crate::game::systems::rest::insert_idle_behaviour;
@@ -121,11 +122,13 @@ fn main() {
                 idle,
                 drink,
                 despawn_eaten_carrion,
+                fly_to_point,
             ),
             spawn_carrion_on_kill,
         )
             .chain(),
     );
+    app.add_systems(FixedUpdate, spawn_birds_occasionally);
 
     // Register our events
     app.add_event::<PreyKilledEvent>();

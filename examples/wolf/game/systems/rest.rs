@@ -60,10 +60,8 @@ pub fn insert_idle_behaviour(
         let path =
             calculate_path(&start_position.translation.xy(), &target_point, &r_walls);
 
-        if path.is_some() {
-            commands
-                .entity(entity)
-                .insert((IdleBehaviour::new(), path.unwrap()));
+        if let Some(path) = path {
+            commands.entity(entity).insert((IdleBehaviour::new(), path));
         }
     }
 }

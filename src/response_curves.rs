@@ -242,7 +242,7 @@ impl PiecewiseLinear {
     ///
     /// Panics if the iterator provides less than two points or the points are not
     /// strictly monotonically increasing in their x coordinates.
-    pub fn new<'a>(points: impl IntoIterator<Item = (f32, f32)>) -> Self {
+    pub fn new(points: impl IntoIterator<Item = (f32, f32)>) -> Self {
         let points = Vec::from_iter(points);
         if points.len() < 2 {
             panic!("You must provide at least two points to the PiecewiseLinear")
