@@ -53,7 +53,6 @@ pub fn drink(
                     .unwrap()
                     .validate_destination(&water_point)
             {
-                info!("Calculating new path");
                 let path = calculate_path(&subject_point, &water_point, &r_walls);
                 if path.is_some() {
                     commands.entity(entity).insert(path.unwrap());

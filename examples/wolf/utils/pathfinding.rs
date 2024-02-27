@@ -69,6 +69,9 @@ pub fn calculate_path(start: &Vec2, end: &Vec2, walls: &Walls) -> Option<Path> {
     );
 
     return if let Some(path) = path_result {
+        if path.0.len() == 1 {
+            return None;
+        }
         Some(Path::new(
             path.0
                 .iter()
