@@ -6,10 +6,10 @@ use bevy::prelude::{Query, Transform};
 
 use bevy_utility_ai_macros::{input_system, targeted_input_system};
 
-use crate::game::entities::carrion::Carrion;
+use crate::game::entities::carrion::Meat;
+use crate::game::systems::drink::Thirst;
 use crate::game::systems::food::{Food, Hunger};
 use crate::game::systems::rest::Energy;
-use crate::game::systems::water::Thirst;
 
 /// How much energy we have on a scale of 0.0 to 1.0
 #[input_system]
@@ -33,7 +33,7 @@ pub(crate) fn thirst(thirst: &Thirst) -> f32 {
 #[input_system]
 pub(crate) fn carcass_availability(
     hunger: &Hunger,
-    q_food: Query<&Food, With<Carrion>>,
+    q_food: Query<&Food, With<Meat>>,
 ) -> f32 {
     let total_food: f32 = q_food.iter().map(|food| food.remaining).sum();
     (total_food - hunger.value).clamp(0.0, hunger.max) / hunger.max

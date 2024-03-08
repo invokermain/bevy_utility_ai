@@ -2,10 +2,13 @@ use bevy::app::{App, Plugin};
 use bevy::asset::{AssetServer, Assets};
 use bevy::math::Vec3;
 use bevy::prelude::{
-    default, Added, Camera2dBundle, Commands, Entity, OrthographicProjection, Query, Res,
-    ResMut, Resource, Startup, TextureAtlasLayout, Transform, Update, Vec2, Vec3Swizzles,
+    default, Added, BuildChildren, Camera2dBundle, Commands, Component, Entity,
+    JustifyText, OrthographicProjection, Query, Res, ResMut, Resource, Startup, Text,
+    Text2dBundle, TextStyle, TextureAtlasLayout, Transform, Update, Vec2, Vec3Swizzles,
 };
 use bevy::render::camera::ScalingMode;
+use bevy::sprite::Anchor;
+use bevy::text::{BreakLineOn, Text2dBounds, TextSection};
 use bevy_ecs_ldtk::{
     EntityInstance, IntGridCell, IntGridRendering, LdtkSettings, LdtkWorldBundle,
     LevelSelection,
@@ -23,6 +26,9 @@ pub const MAP_TILE_HEIGHT: usize = 16;
 
 #[derive(Copy, Clone, Debug, Default)]
 pub struct WolfSceneSetupPlugin;
+
+#[derive(Component)]
+pub struct WolfText;
 
 impl Plugin for WolfSceneSetupPlugin {
     fn build(&self, app: &mut App) {
@@ -72,11 +78,42 @@ fn spawn_game_entities(
 ) {
     for (entity, entity_instance, transform) in new_entity_instances.iter() {
         if entity_instance.identifier == *"Wolf" {
-            commands.entity(entity).insert(WolfBundle::new(
-                *transform,
-                &assets,
-                &mut texture_atlas_layouts,
-            ));
+            commands
+                .entity(entity)
+                .insert(WolfBundle::new(
+                    *transform,
+                    &assets,
+                    &mut texture_atlas_layouts,
+                ))
+                .with_children(|builder| {
+                    builder.spawn((
+                        Text2dBundle {
+                            text: Text {
+                                sections: vec![TextSection::new(
+                                    "",
+                                    TextStyle {
+                                        font_size: 12.0,
+                                        ..default()
+                                    },
+                                )],
+                                justify: JustifyText::Left,
+                                linebreak_behavior: BreakLineOn::AnyCharacter,
+                            },
+                            text_2d_bounds: Text2dBounds {
+                                // Wrap text in the rectangle
+                                size: Vec2::new(48.0, 24.0),
+                            },
+                            // ensure the text is drawn on top of the box
+                            transform: Transform::from_translation(Vec3::new(
+                                0.0, 8.0, 1.0,
+                            ))
+                            .with_scale(Vec3::new(0.33, 0.33, 1.0)),
+                            text_anchor: Anchor::BottomCenter,
+                            ..default()
+                        },
+                        WolfText,
+                    ));
+                });
         } else if entity_instance.identifier == *"WaterSource" {
             commands
                 .entity(entity)

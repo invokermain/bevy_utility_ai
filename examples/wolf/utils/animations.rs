@@ -1,12 +1,12 @@
 use bevy::prelude::{Component, Deref, DerefMut, Query, Res, TextureAtlas, Time, Timer};
 
-#[derive(Component)]
+#[derive(Component, Default, Copy, Clone)]
 pub struct AnimationIndices {
     pub first: usize,
     pub last: usize,
 }
 
-#[derive(Component, Deref, DerefMut)]
+#[derive(Component, Deref, DerefMut, Default, Clone)]
 pub struct AnimationTimer(pub Timer);
 
 pub fn animate_sprite(

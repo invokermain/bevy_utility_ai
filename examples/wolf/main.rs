@@ -10,10 +10,10 @@ use bevy_egui::EguiPlugin;
 use bevy_utility_ai::dashboard::UtilityAIDashboardPlugin;
 use bevy_utility_ai::plugin::{UtilityAIPlugin, UtilityAISet};
 use bevy_utility_ai::systems::make_decisions::EntityActionChangedEvent;
-use game::entities::carrion::{despawn_eaten_carrion, spawn_carrion_on_kill};
+use game::entities::carrion::{despawn_eaten_meat, spawn_meat_on_kill};
+use game::systems::drink::{drink, increase_thirst};
 use game::systems::hunt::hunt;
 use game::systems::rest::{idle, rest};
-use game::systems::water::{drink, increase_thirst};
 use ui::{
     energy_text_update_system, fps_text_update_system, hunger_text_update_system,
     setup_fps_counter, thirst_text_update_system,
@@ -21,7 +21,9 @@ use ui::{
 use utils::animations::animate_sprite;
 
 use crate::game::ai::wolf::construct_hunter_ai;
-use crate::game::entities::birds::{fly_to_point, spawn_birds_occasionally};
+use crate::game::entities::birds::{
+    bird_movement, load_bird_assets, spawn_birds_occasionally, BirdAssetHandles,
+};
 use crate::game::systems::food::{eat, increase_hunger};
 use crate::game::systems::hunt::PreyKilledEvent;
 use crate::game::systems::rest::insert_idle_behaviour;
@@ -121,13 +123,15 @@ fn main() {
                 insert_idle_behaviour,
                 idle,
                 drink,
-                despawn_eaten_carrion,
-                fly_to_point,
+                despawn_eaten_meat,
+                bird_movement,
             ),
-            spawn_carrion_on_kill,
+            spawn_meat_on_kill,
         )
             .chain(),
     );
+    app.init_resource::<BirdAssetHandles>();
+    app.add_systems(Startup, load_bird_assets);
     app.add_systems(FixedUpdate, spawn_birds_occasionally);
 
     // Register our events

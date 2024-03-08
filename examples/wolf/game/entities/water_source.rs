@@ -1,7 +1,7 @@
 use bevy::ecs::bundle::Bundle;
 use bevy::prelude::{default, Transform};
 
-use crate::game::systems::water::Water;
+use crate::game::systems::drink::Water;
 
 #[derive(Bundle, Default)]
 pub struct WaterSourceBundle {

@@ -6,10 +6,11 @@ use bevy_utility_ai::decisions::Decision;
 use bevy_utility_ai::define_ai::DefineAI;
 use bevy_utility_ai::response_curves::{Linear, PiecewiseLinear, Polynomial};
 
-use crate::game::ai::actions::{ActionEat, ActionIdle, ActionRest};
+use crate::game::ai::actions::{ActionEat, ActionHunt, ActionIdle, ActionRest};
 use crate::game::ai::inputs::{distance_to, energy, hunger};
-use crate::game::entities::carrion::Carrion;
-use crate::game::systems::water::Water;
+use crate::game::entities::carrion::Meat;
+use crate::game::systems::drink::Water;
+use crate::game::systems::hunt::IsPrey;
 
 use super::actions::ActionDrink;
 use super::inputs::thirst;
@@ -49,37 +50,32 @@ pub(crate) fn construct_hunter_ai(app: &mut App) {
                     ),
                 ),
         )
-        // .add_decision(
-        //     // Hunt...
-        //     Decision::targeted::<ActionHunt>()
-        //         // only prey
-        //         .target_filter_include::<PreyAI>()
-        //         // prefer closer targets
-        //         .add_consideration(
-        //             Consideration::targeted(distance_to)
-        //                 .with_response_curve(Linear::new(-0.001).shifted(0.0, 1.0)),
-        //         )
-        //         // if there is no food in the area
-        //         .add_consideration(
-        //             Consideration::simple(carcass_availability)
-        //                 .with_response_curve(Linear::new(-1.0).shifted(0.0, 1.0)),
-        //         )
-        //         // if we have energy
-        //         .add_consideration(
-        //             Consideration::simple(energy)
-        //                 .with_response_curve(Polynomial::new(1.0, 0.25)),
-        //         )
-        //         // if we are hungry
-        //         .add_consideration(
-        //             Consideration::simple(hunger)
-        //                 .with_response_curve(Polynomial::new(1.0, 0.25)),
-        //         ),
-        // )
+        .add_decision(
+            // Hunt...
+            Decision::targeted::<ActionHunt>()
+                // only prey
+                .target_filter_include::<IsPrey>()
+                // prefer closer targets
+                .add_consideration(
+                    Consideration::targeted(distance_to)
+                        .with_response_curve(Linear::new(-0.001).shifted(0.0, 1.0)),
+                )
+                // if we have energy
+                .add_consideration(
+                    Consideration::simple(energy)
+                        .with_response_curve(Polynomial::new(1.0, 0.25)),
+                )
+                // if we are hungry
+                .add_consideration(
+                    Consideration::simple(hunger)
+                        .with_response_curve(Polynomial::new(1.0, 0.25)),
+                ),
+        )
         .add_decision(
             // Eat...
             Decision::targeted::<ActionEat>()
-                // only carrion
-                .target_filter_include::<Carrion>()
+                // only food
+                .target_filter_include::<Meat>()
                 // & prefer closer targets
                 .add_consideration(
                     Consideration::targeted(distance_to)

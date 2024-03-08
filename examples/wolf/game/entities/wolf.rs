@@ -4,11 +4,12 @@ use bevy::ecs::system::Res;
 use bevy::math::Vec2;
 use bevy::prelude::*;
 use bevy::sprite::SpriteSheetBundle;
+use rand::{thread_rng, Rng};
 
 use crate::game::ai::wolf::HunterAI;
+use crate::game::systems::drink::Thirst;
 use crate::game::systems::food::Hunger;
 use crate::game::systems::rest::Energy;
-use crate::game::systems::water::Thirst;
 use crate::utils::animations::{AnimationIndices, AnimationTimer};
 
 #[derive(Bundle)]
@@ -28,6 +29,7 @@ impl WolfBundle {
         asset_server: &Res<AssetServer>,
         texture_atlas_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
     ) -> Self {
+        let mut rng = thread_rng();
         let texture = asset_server.load("wolf.png");
         let layout =
             TextureAtlasLayout::from_grid(Vec2::new(16.0, 16.0), 4, 1, None, None);
@@ -50,15 +52,15 @@ impl WolfBundle {
             )),
             ai: HunterAI {}, // this component enables the HunterAI behaviour
             hunger: Hunger {
-                value: 0.0,
+                value: rng.gen_range(0.0..60.0),
                 max: 100.0,
             },
             thirst: Thirst {
-                value: 0.,
+                value: rng.gen_range(0.0..60.0),
                 max: 100.,
             },
             energy: Energy {
-                value: 100.0,
+                value: rng.gen_range(5.0..100.0),
                 max: 100.0,
             },
         }

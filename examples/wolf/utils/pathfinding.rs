@@ -1,7 +1,7 @@
 use crate::level::{Walls, GRID_SIZE, HALF_GRID_SIZE, MAP_SIZE};
 use bevy::prelude::{Component, Vec2};
 use pathfinding::prelude::astar;
-use rand::Rng;
+use rand::{thread_rng, Rng};
 
 #[derive(Component)]
 pub struct Path {
@@ -43,6 +43,17 @@ pub fn random_pathable_point(walls: &Walls) -> Vec2 {
         if !walls.in_wall(&try_point) {
             break try_point;
         }
+    }
+}
+
+pub fn random_point_on_edge_of_map() -> Vec2 {
+    let mut rng = thread_rng();
+    match rng.gen_range(0..4) {
+        0 => Vec2::new(-5.0, rng.gen_range(0.0..MAP_SIZE)),
+        1 => Vec2::new(MAP_SIZE + 5.0, rng.gen_range(0.0..MAP_SIZE)),
+        2 => Vec2::new(rng.gen_range(0.0..MAP_SIZE), -5.0),
+        3 => Vec2::new(rng.gen_range(0.0..MAP_SIZE), MAP_SIZE + 5.0),
+        _ => Vec2::default(),
     }
 }
 

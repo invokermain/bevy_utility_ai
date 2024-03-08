@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use bevy_utility_ai::ActionTarget;
 
 use crate::game::ai::actions::ActionDrink;
-use crate::level::{Walls, GRID_SIZE};
+use crate::level::{Walls, WolfText, GRID_SIZE};
 use crate::utils::pathfinding::{calculate_path, Path};
 
 #[derive(Component)]
@@ -35,6 +35,7 @@ pub fn drink(
         ),
         (With<ActionDrink>, Without<Water>),
     >,
+    mut q_wolf_text: Query<&mut Text, With<WolfText>>,
     mut q_water: Query<&Transform, With<Water>>,
     r_time: Res<Time>,
     r_walls: Res<Walls>,
@@ -68,6 +69,10 @@ pub fn drink(
                 if path.is_path_complete() {
                     let portion_size = 20.0f32.min(subject_thirst.value);
                     subject_thirst.value -= portion_size * r_time.delta_seconds();
+
+                    if let Ok(mut text) = q_wolf_text.get_single_mut() {
+                        text.sections[0].value = "*slurp*".into();
+                    };
                 } else {
                     path.complete_path_point();
                 }

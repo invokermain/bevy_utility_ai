@@ -6,9 +6,9 @@ use bevy::ui::FlexDirection;
 use bevy_utility_ai::AIMeta;
 
 use crate::game::ai::wolf::HunterAI;
+use crate::game::systems::drink::Thirst;
 use crate::game::systems::food::Hunger;
 use crate::game::systems::rest::Energy;
-use crate::game::systems::water::Thirst;
 
 #[derive(Component)]
 pub struct FpsRoot;

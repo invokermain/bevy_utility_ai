@@ -1,92 +1,102 @@
+use crate::game::systems::hunt::IsPrey;
 use crate::level::{Walls, GRID_SIZE, MAP_SIZE};
 use crate::utils::animations::{AnimationIndices, AnimationTimer};
-use crate::utils::pathfinding::random_pathable_point;
+use crate::utils::pathfinding::{random_pathable_point, random_point_on_edge_of_map};
 use bevy::asset::AssetServer;
-use bevy::ecs::bundle::Bundle;
 use bevy::ecs::system::{Command, Res};
 use bevy::math::Vec2;
 use bevy::prelude::*;
 use bevy::sprite::SpriteSheetBundle;
 use rand::{thread_rng, Rng};
 
-#[derive(Copy, Clone, Debug, Component)]
-pub enum BirdState {
-    Resting,
-    Walking,
-    Flying,
+#[derive(Copy, Clone)]
+pub enum BirdScriptStage {
+    FlyInto,
+    Wait,
+    FlyAway,
 }
 
-#[derive(Event)]
-pub struct BirdStateChanged {
-    entity: Entity,
-    previous: BirdState,
-    new: BirdState,
+#[derive(Component, Copy, Clone)]
+pub struct BirdScriptedMovement {
+    pub start_at: Vec2,
+    pub land_at: Vec2,
+    pub wait_for: f32,
+    pub end_at: Vec2,
+    pub stage: BirdScriptStage,
 }
 
-#[derive(Component)]
-pub struct FlyTo {
-    pub point: Vec2,
+#[derive(Resource, Default)]
+pub struct BirdAssetHandles {
+    image: Handle<Image>,
+    flying_texture_layout: Handle<TextureAtlasLayout>,
+    flying_animation: (AnimationIndices, AnimationTimer),
+    resting_texture_layout: Handle<TextureAtlasLayout>,
 }
 
-#[derive(Bundle)]
-pub struct BirdBundle {
-    sprite: SpriteSheetBundle,
-    animation_indices: AnimationIndices,
-    animation_timer: AnimationTimer,
-    state: BirdState,
-    fly_to: FlyTo,
-}
-
-pub struct SpawnBird {
-    fly_to_point: Vec2,
-}
-
-impl Command for SpawnBird {
-    fn apply(self, world: &mut World) {
-        let texture = world.resource_scope(|_, asset_server: Mut<AssetServer>| {
-            asset_server.load("pigeons.png")
-        });
-        let layout = TextureAtlasLayout::from_grid(
+pub fn load_bird_assets(
+    mut r_bird_assets: ResMut<BirdAssetHandles>,
+    r_asset_server: Res<AssetServer>,
+    mut r_texture_atlas_layout: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    *r_bird_assets = BirdAssetHandles {
+        image: r_asset_server.load("pigeons.png"),
+        flying_texture_layout: r_texture_atlas_layout.add(TextureAtlasLayout::from_grid(
             Vec2::new(16.0, 16.0),
             3,
             1,
             None,
             Some(Vec2::new(0.0, 16.0)),
-        );
-        let texture_atlas_layout = world.resource_scope(
-            |_, mut texture_atlas_layouts: Mut<Assets<TextureAtlasLayout>>| {
-                texture_atlas_layouts.add(layout)
-            },
-        );
-        let animation_indices = AnimationIndices { first: 0, last: 2 };
+        )),
+        flying_animation: (
+            AnimationIndices { first: 0, last: 2 },
+            AnimationTimer(Timer::from_seconds(0.25, TimerMode::Repeating)),
+        ),
+        resting_texture_layout: r_texture_atlas_layout.add(
+            TextureAtlasLayout::from_grid(
+                Vec2::new(16.0, 16.0),
+                1,
+                1,
+                None,
+                Some(Vec2::new(64.0, 16.0)),
+            ),
+        ),
+    }
+}
 
+pub struct SpawnBird;
+
+impl Command for SpawnBird {
+    fn apply(self, world: &mut World) {
         let mut rng = thread_rng();
-        let starting_point = Vec3::new(
-            rng.gen_range(0.0..MAP_SIZE),
-            rng.gen_range(0.0..MAP_SIZE),
-            100.0,
-        );
+        let fly_to_point = random_pathable_point(&world.resource::<Walls>());
+        world.resource_scope(|world: &mut World, asset_handles: Mut<BirdAssetHandles>| {
+            let starting_point = random_point_on_edge_of_map();
+            let end_point = starting_point
+                + (fly_to_point - starting_point).normalize() * MAP_SIZE * 1.1;
+            let entity_layer: f32 = 8.0;
 
-        world.spawn(BirdBundle {
-            sprite: SpriteSheetBundle {
-                texture,
-                transform: Transform::from_translation(starting_point),
-                atlas: TextureAtlas {
-                    layout: texture_atlas_layout,
-                    index: animation_indices.first,
+            world.spawn((
+                SpriteSheetBundle {
+                    texture: asset_handles.image.clone(),
+                    transform: Transform::from_translation(
+                        starting_point.extend(entity_layer),
+                    ),
+                    atlas: TextureAtlas {
+                        layout: asset_handles.flying_texture_layout.clone(),
+                        index: 0,
+                    },
+                    ..default()
                 },
-                ..default()
-            },
-            animation_indices,
-            animation_timer: AnimationTimer(Timer::from_seconds(
-                0.25,
-                TimerMode::Repeating,
-            )),
-            state: BirdState::Flying,
-            fly_to: FlyTo {
-                point: self.fly_to_point,
-            },
-        });
+                BirdScriptedMovement {
+                    start_at: starting_point,
+                    land_at: fly_to_point,
+                    wait_for: rng.gen_range(3.0..8.0),
+                    end_at: end_point,
+                    stage: BirdScriptStage::FlyInto,
+                },
+                asset_handles.flying_animation.clone(),
+            ));
+        })
     }
 }
 
@@ -94,59 +104,78 @@ pub fn spawn_birds_occasionally(
     mut time_till_spawn: Local<f32>,
     mut commands: Commands,
     r_time: Res<Time>,
-    r_walls: Res<Walls>,
 ) {
     if *time_till_spawn <= 0.0 {
         let mut rng = thread_rng();
-        let random = rng.gen_range(0.0..1.032);
-        let bird_num = if random <= 0.5 {
-            1u8
-        } else if random <= 0.8 {
-            2u8
-        } else {
-            3u8
-        };
-        for _ in 0..bird_num {
-            let fly_to_point = random_pathable_point(&r_walls);
-            commands.add(SpawnBird { fly_to_point });
-        }
+        commands.add(SpawnBird);
         *time_till_spawn = rng.gen_range(10.0..30.0f32);
     } else {
         *time_till_spawn -= r_time.delta_seconds();
     }
 }
 
-pub fn fly_to_point(
-    mut q_birds: Query<(Entity, &mut Transform, &FlyTo)>,
+pub fn bird_movement(
+    mut q_birds: Query<(Entity, &mut Transform, &mut BirdScriptedMovement)>,
     r_time: Res<Time>,
+    r_asset_handles: Res<BirdAssetHandles>,
     mut commands: Commands,
 ) {
-    for (entity, mut transform, fly_to) in &mut q_birds {
-        let current_point = transform.translation.xy();
-        let target_point = fly_to.point;
-        let distance_to_target = target_point.distance(current_point);
-        if distance_to_target <= 1.0 {
-            commands
-                .entity(entity)
-                .insert(BirdState::Walking)
-                .remove::<FlyTo>();
-        } else {
-            let direction = (target_point - current_point).normalize();
-            transform.translation += direction.extend(0.0)
-                * (GRID_SIZE * 2.5 * r_time.delta_seconds()).min(distance_to_target);
-        }
-    }
-}
-
-pub fn update_bird_on_state_change(
-    q_bird: Query<(Entity, &BirdState), Changed<BirdState>>,
-    mut commands: Commands,
-) {
-    for (entity, new_state) in &q_bird {
-        match new_state {
-            BirdState::Resting => {}
-            BirdState::Walking => {}
-            BirdState::Flying => {}
+    for (entity, mut transform, mut movement_script) in &mut q_birds {
+        match movement_script.stage {
+            BirdScriptStage::FlyInto => {
+                let current_point = transform.translation.xy();
+                let target_point = movement_script.land_at;
+                let distance_to_target = target_point.distance(current_point);
+                if distance_to_target <= 1.0 {
+                    commands
+                        .entity(entity)
+                        .insert((
+                            TextureAtlas {
+                                layout: r_asset_handles.resting_texture_layout.clone(),
+                                index: 0,
+                            },
+                            IsPrey,
+                        ))
+                        .remove::<AnimationIndices>()
+                        .remove::<AnimationTimer>();
+                    movement_script.stage = BirdScriptStage::Wait;
+                } else {
+                    let direction = (target_point - current_point).normalize();
+                    transform.translation += direction.extend(0.0)
+                        * (GRID_SIZE * 2.5 * r_time.delta_seconds())
+                            .min(distance_to_target);
+                }
+            }
+            BirdScriptStage::Wait => {
+                if movement_script.wait_for <= 0.0 {
+                    commands
+                        .entity(entity)
+                        .insert((
+                            TextureAtlas {
+                                layout: r_asset_handles.flying_texture_layout.clone(),
+                                index: 0,
+                            },
+                            r_asset_handles.flying_animation.clone(),
+                        ))
+                        .remove::<IsPrey>();
+                    movement_script.stage = BirdScriptStage::FlyAway;
+                } else {
+                    movement_script.wait_for -= r_time.delta_seconds();
+                }
+            }
+            BirdScriptStage::FlyAway => {
+                let current_point = transform.translation.xy();
+                let target_point = movement_script.end_at;
+                let distance_to_target = target_point.distance(current_point);
+                if distance_to_target <= 1.0 {
+                    commands.entity(entity).despawn();
+                } else {
+                    let direction = (target_point - current_point).normalize();
+                    transform.translation += direction.extend(0.0)
+                        * (GRID_SIZE * 2.5 * r_time.delta_seconds())
+                            .min(distance_to_target);
+                }
+            }
         }
     }
 }
