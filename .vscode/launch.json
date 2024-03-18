@@ -1,0 +1,159 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'bevy_utility_ai'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=bevy_utility_ai"
+                ],
+                "filter": {
+                    "name": "bevy_utility_ai",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'hunting'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=hunting",
+                    "--package=bevy_utility_ai"
+                ],
+                "filter": {
+                    "name": "hunting",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'hunting'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=hunting",
+                    "--package=bevy_utility_ai"
+                ],
+                "filter": {
+                    "name": "hunting",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'macro_targeted_input_system'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=macro_targeted_input_system",
+                    "--package=bevy_utility_ai"
+                ],
+                "filter": {
+                    "name": "macro_targeted_input_system",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'macro_ui'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=macro_ui",
+                    "--package=bevy_utility_ai"
+                ],
+                "filter": {
+                    "name": "macro_ui",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'macro_input_system'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=macro_input_system",
+                    "--package=bevy_utility_ai"
+                ],
+                "filter": {
+                    "name": "macro_input_system",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'dashboard'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=dashboard",
+                    "--package=bevy_utility_ai"
+                ],
+                "filter": {
+                    "name": "dashboard",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'e2e'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=e2e",
+                    "--package=bevy_utility_ai"
+                ],
+                "filter": {
+                    "name": "e2e",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
