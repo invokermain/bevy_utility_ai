@@ -1,7 +1,9 @@
 use crate::game::systems::hunt::IsPrey;
+use crate::game::systems::pathfinding::{
+    random_pathable_point, random_point_on_edge_of_map,
+};
 use crate::level::{Walls, GRID_SIZE, MAP_SIZE};
 use crate::utils::animations::{AnimationIndices, AnimationTimer};
-use crate::utils::pathfinding::{random_pathable_point, random_point_on_edge_of_map};
 use bevy::asset::AssetServer;
 use bevy::ecs::system::{Command, Res};
 use bevy::math::Vec2;

@@ -1,15 +1,11 @@
-use bevy::prelude::{Component, Res, Time};
-use bevy::{
-    math::Vec3Swizzles,
-    prelude::{Entity, Event, EventWriter, Query, Transform, Vec2, With, Without},
-};
+use bevy::{math::Vec3Swizzles, prelude::*};
 
 use bevy_utility_ai::ActionTarget;
 
-use crate::game::ai::actions::ActionHunt;
 use crate::game::ai::wolf::HunterAI;
-use crate::game::systems::rest::Energy;
-use crate::level::GRID_SIZE;
+use crate::{game::ai::actions::ActionHunt, level::HALF_GRID_SIZE};
+
+use super::pathfinding::{Path, PathRequested};
 
 #[derive(Event)]
 pub struct PreyKilledEvent {
@@ -22,36 +18,34 @@ pub struct IsPrey;
 
 pub fn hunt(
     mut q_hunter: Query<
-        (&mut Transform, &mut Energy, &ActionTarget),
-        (With<ActionHunt>, With<HunterAI>),
+        (Entity, &Transform, &ActionTarget),
+        (With<ActionHunt>, With<HunterAI>, Without<Path>),
     >,
     q_prey: Query<&Transform, Without<HunterAI>>,
-    r_time: Res<Time>,
     mut ev_prey_killed: EventWriter<PreyKilledEvent>,
+    mut ew_path_requested: EventWriter<PathRequested>,
 ) {
-    for (mut hunter_transform, mut energy, target_entity) in q_hunter.iter_mut() {
-        let position = &mut hunter_transform.translation.xy();
+    for (entity, hunter_transform, target_entity) in q_hunter.iter_mut() {
+        let position = &hunter_transform.translation.xy();
 
         if let Ok(target) = q_prey.get(target_entity.target) {
-            let target_position = target.translation.xy();
+            let target_point = target.translation.xy();
 
             // if we are close enough kill the prey
-            if target_position.distance(*position) <= 1.0 {
+            if target_point.distance(*position) <= HALF_GRID_SIZE {
                 ev_prey_killed.send(PreyKilledEvent {
                     entity: target_entity.target,
-                    position: target_position,
+                    position: target_point,
                 });
             }
-            // otherwise move towards our prey
+            // otherwise request path to prey
             else {
-                let movement_vector = target_position - *position;
-                hunter_transform.translation += movement_vector.normalize().extend(0.0)
-                    * 3.
-                    * GRID_SIZE
-                    * r_time.delta_seconds();
+                ew_path_requested.send(PathRequested {
+                    entity,
+                    target_point,
+                    speed: 5.0,
+                });
             }
-
-            energy.value = (energy.value - 5.0 * r_time.delta_seconds()).max(0.0);
         }
     }
 }

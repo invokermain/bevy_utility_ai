@@ -1,10 +1,11 @@
 use crate::game::ai::actions::{ActionIdle, ActionRest};
-use crate::level::{Walls, GRID_SIZE};
-use crate::utils::pathfinding::{calculate_path, random_pathable_point, Path};
-use bevy::prelude::{
-    Commands, Component, Entity, Query, Res, Time, Vec3Swizzles, With, Without,
+use crate::game::systems::pathfinding::{
+    calculate_path_vector, random_pathable_point, Path,
 };
+use crate::level::{Walls, GRID_SIZE};
+use bevy::prelude::*;
 use bevy::transform::components::Transform;
+use bevy::utils::HashMap;
 use rand::{thread_rng, Rng};
 
 #[derive(Component)]
@@ -38,11 +39,31 @@ impl IdleBehaviour {
 }
 
 pub fn rest(mut q_energy: Query<&mut Energy, With<ActionRest>>, r_time: Res<Time>) {
-    for mut energy in q_energy.iter_mut() {
-        energy.value += 1.0 * r_time.delta_seconds();
-        if energy.value >= energy.max {
-            energy.value = energy.max
-        }
+    for (entity, mut subject_thirst, transform, action_target) in q_subject.iter_mut() {
+        if let Ok(water_transform) = q_water.get_mut(action_target.target) {
+            let water_point = water_transform.translation.xy();
+            let subject_point = transform.translation.xy();
+            let distance_to_water = subject_point.distance(water_point);
+            // if we are near water drink
+            if distance_to_water <= 1.0 {
+                let portion_size = 20.0f32.min(subject_thirst.value);
+                subject_thirst.value -= portion_size * r_time.delta_seconds();
+
+                if let Ok(mut text) = q_wolf_text.get_single_mut() {
+                    text.sections[0].value = "*slurp*".into();
+                };
+            }
+            // otherwise request path to water
+            else {
+                ew_path_requested.send(PathRequested {
+                    entity,
+                    target_point: water_point,
+                    speed: 2.0,
+                });
+            }
+        } else {
+            continue;
+        };
     }
 }
 
@@ -57,11 +78,16 @@ pub fn insert_idle_behaviour(
     for (entity, start_position) in &q_position {
         let target_point = random_pathable_point(&r_walls);
 
-        let path =
-            calculate_path(&start_position.translation.xy(), &target_point, &r_walls);
+        let path_vector = calculate_path_vector(
+            &start_position.translation.xy(),
+            &target_point,
+            &r_walls,
+        );
 
-        if let Some(path) = path {
-            commands.entity(entity).insert((IdleBehaviour::new(), path));
+        if let Some(path_vector) = path_vector {
+            commands
+                .entity(entity)
+                .insert((IdleBehaviour::new(), Path::new(path_vector, 1.0)));
         }
     }
 }
@@ -108,5 +134,24 @@ pub fn idle(
             transform.translation += direction.extend(0.0)
                 * (GRID_SIZE * 1.25 * r_time.delta_seconds()).min(distance_to_target);
         }
+    }
+}
+
+pub fn consume_energy(
+    mut query: Query<(Entity, &Transform, &mut Energy)>,
+    r_time: Res<Time>,
+    mut previous_positions: Local<HashMap<Entity, Vec2>>,
+) {
+    for (entity, transform, mut energy) in query.iter_mut() {
+        let current_position = transform.translation.xy();
+        let previous_position =
+            previous_positions.entry(entity).or_insert(current_position);
+        let distance_travelled = current_position.distance(*previous_position);
+        let velocity = distance_travelled / (r_time.delta_seconds() * GRID_SIZE);
+        let energy_used =
+            (velocity - 1.0).max(0.0).powf(2.0) * r_time.delta_seconds() * 0.25;
+        energy.value = (energy.value - energy_used).max(0.0);
+
+        *previous_position = current_position.clone();
     }
 }

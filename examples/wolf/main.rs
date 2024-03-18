@@ -11,9 +11,11 @@ use bevy_utility_ai::dashboard::UtilityAIDashboardPlugin;
 use bevy_utility_ai::plugin::{UtilityAIPlugin, UtilityAISet};
 use bevy_utility_ai::systems::make_decisions::EntityActionChangedEvent;
 use game::entities::carrion::{despawn_eaten_meat, spawn_meat_on_kill};
+use game::entities::wolf::clear_wolf_text;
 use game::systems::drink::{drink, increase_thirst};
 use game::systems::hunt::hunt;
-use game::systems::rest::{idle, rest};
+use game::systems::pathfinding::{assign_path, follow_path, PathRequested};
+use game::systems::rest::{consume_energy, idle, rest};
 use ui::{
     energy_text_update_system, fps_text_update_system, hunger_text_update_system,
     setup_fps_counter, thirst_text_update_system,
@@ -94,7 +96,10 @@ fn main() {
     // that is runs after any decisions have been made.
     app.add_systems(
         Update,
-        log_ai_updated_action.in_set(UtilityAISet::UpdateActions),
+        (
+            log_ai_updated_action.in_set(UtilityAISet::UpdateActions),
+            clear_wolf_text.in_set(UtilityAISet::UpdateActions),
+        ),
     );
 
     // Run the Utility AI systems every 0.25 seconds.
@@ -117,6 +122,7 @@ fn main() {
             (
                 hunt,
                 rest,
+                consume_energy,
                 increase_hunger,
                 increase_thirst,
                 eat,
@@ -125,6 +131,8 @@ fn main() {
                 drink,
                 despawn_eaten_meat,
                 bird_movement,
+                assign_path,
+                follow_path,
             ),
             spawn_meat_on_kill,
         )
@@ -135,7 +143,8 @@ fn main() {
     app.add_systems(FixedUpdate, spawn_birds_occasionally);
 
     // Register our events
-    app.add_event::<PreyKilledEvent>();
+    app.add_event::<PreyKilledEvent>()
+        .add_event::<PathRequested>();
 
     app.run()
 }

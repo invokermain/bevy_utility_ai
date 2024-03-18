@@ -1,19 +1,74 @@
 use crate::level::{Walls, GRID_SIZE, HALF_GRID_SIZE, MAP_SIZE};
-use bevy::prelude::{Component, Vec2};
+use bevy::prelude::*;
 use pathfinding::prelude::astar;
 use rand::{thread_rng, Rng};
+
+#[derive(Event)]
+pub struct PathRequested {
+    pub entity: Entity,
+    pub target_point: Vec2,
+    pub speed: f32,
+}
+
+pub fn assign_path(
+    mut er_path_requested: EventReader<PathRequested>,
+    q_transform: Query<&Transform>,
+    mut commands: Commands,
+    r_walls: Res<Walls>,
+) {
+    for event in er_path_requested.read() {
+        if let Ok(current_transform) = q_transform.get(event.entity) {
+            let start_point = current_transform.translation.xy();
+            let path_vector =
+                calculate_path_vector(&start_point, &event.target_point, &r_walls);
+            if let Some(path_vector) = path_vector {
+                let path = Path::new(path_vector, event.speed);
+                commands.entity(event.entity).insert(path);
+            }
+        }
+    }
+}
+
+pub fn follow_path(
+    mut query: Query<(Entity, &mut Transform, &mut Path)>,
+    mut commands: Commands,
+    r_time: Res<Time>,
+) {
+    for (entity, mut transform, mut path) in &mut query {
+        let subject_point = transform.translation.xy();
+        let target_point = path.current_path_point();
+        let distance_to_target = subject_point.distance(target_point);
+        // if we are near target complete step
+        if distance_to_target <= 1.0 {
+            if path.is_path_complete() {
+                commands.entity(entity).remove::<Path>();
+            } else {
+                path.complete_path_point();
+            }
+        }
+        // otherwise walk to the target point
+        else {
+            let direction = (target_point - subject_point).normalize();
+            transform.translation += direction.extend(0.0)
+                * (GRID_SIZE * path.speed * r_time.delta_seconds())
+                    .min(distance_to_target);
+        }
+    }
+}
 
 #[derive(Component)]
 pub struct Path {
     pub path: Vec<Vec2>,
     pub current_index: usize,
+    pub speed: f32,
 }
 
 impl Path {
-    pub fn new(path: Vec<Vec2>) -> Self {
+    pub fn new(path_vector: Vec<Vec2>, speed: f32) -> Self {
         Self {
-            path,
+            path: path_vector,
             current_index: 0,
+            speed,
         }
     }
 
@@ -27,11 +82,6 @@ impl Path {
 
     pub fn is_path_complete(&self) -> bool {
         self.current_index + 1 == self.path.len()
-    }
-
-    pub fn validate_destination(&self, destination: &Vec2) -> bool {
-        let last_path_point = self.path.last().unwrap();
-        last_path_point.distance(*destination) <= HALF_GRID_SIZE
     }
 }
 
@@ -57,7 +107,11 @@ pub fn random_point_on_edge_of_map() -> Vec2 {
     }
 }
 
-pub fn calculate_path(start: &Vec2, end: &Vec2, walls: &Walls) -> Option<Path> {
+pub fn calculate_path_vector(
+    start: &Vec2,
+    end: &Vec2,
+    walls: &Walls,
+) -> Option<Vec<Vec2>> {
     // we need to translate to 'grid scale'.
     let start_point = world_to_grid(start);
     let end_point = world_to_grid(end);
@@ -83,13 +137,13 @@ pub fn calculate_path(start: &Vec2, end: &Vec2, walls: &Walls) -> Option<Path> {
         if path.0.len() == 1 {
             return None;
         }
-        Some(Path::new(
+        Some(
             path.0
                 .iter()
                 .skip(1) // it includes the start point
                 .map(grid_to_world)
                 .collect(),
-        ))
+        )
     } else {
         None
     };

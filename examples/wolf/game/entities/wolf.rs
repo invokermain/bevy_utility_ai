@@ -4,12 +4,14 @@ use bevy::ecs::system::Res;
 use bevy::math::Vec2;
 use bevy::prelude::*;
 use bevy::sprite::SpriteSheetBundle;
+use bevy_utility_ai::systems::make_decisions::EntityActionChangedEvent;
 use rand::{thread_rng, Rng};
 
 use crate::game::ai::wolf::HunterAI;
 use crate::game::systems::drink::Thirst;
 use crate::game::systems::food::Hunger;
 use crate::game::systems::rest::Energy;
+use crate::level::WolfText;
 use crate::utils::animations::{AnimationIndices, AnimationTimer};
 
 #[derive(Bundle)]
@@ -63,6 +65,17 @@ impl WolfBundle {
                 value: rng.gen_range(5.0..100.0),
                 max: 100.0,
             },
+        }
+    }
+}
+
+pub fn clear_wolf_text(
+    mut e_action_changed: EventReader<EntityActionChangedEvent>,
+    mut q_wolf_text: Query<&mut Text, With<WolfText>>,
+) {
+    for _ in e_action_changed.read() {
+        if let Ok(mut text) = q_wolf_text.get_single_mut() {
+            text.sections[0].value = "".to_string();
         }
     }
 }
