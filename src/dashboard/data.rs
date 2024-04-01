@@ -7,7 +7,7 @@ use crate::AIDefinitions;
 use bevy::ecs::archetype::Archetypes;
 use bevy::ecs::component::Components;
 use bevy::prelude::{Entity, EventReader, Local, Res, ResMut, Resource};
-use bevy::utils::HashMap;
+use bevy::utils::{HashMap, Uuid};
 use std::any::TypeId;
 use std::collections::VecDeque;
 
@@ -19,14 +19,14 @@ pub(crate) struct DashboardData {
     /// Input scores for the selected Entities
     pub(crate) entity_input_scores:
         HashMap<Entity, HashMap<(String, Option<Entity>), VecDeque<f32>>>,
-    /// Consideration Input Scores
-    pub(crate) consideration_input_scores: HashMap<String, VecDeque<f32>>,
+    /// Input Scores
+    pub(crate) input_scores: HashMap<String, VecDeque<f32>>,
     /// Considerations scores for the selected Entities
     pub(crate) consideration_scores:
-        HashMap<Entity, HashMap<(String, Option<Entity>), VecDeque<f32>>>,
+        HashMap<Entity, HashMap<(Uuid, Option<Entity>), VecDeque<f32>>>,
     /// Decision scores for the selected Entities
     pub(crate) decision_scores:
-        HashMap<Entity, HashMap<(String, Option<Entity>), VecDeque<f32>>>,
+        HashMap<Entity, HashMap<(Uuid, Option<Entity>), VecDeque<f32>>>,
 }
 
 impl DashboardData {
@@ -35,7 +35,7 @@ impl DashboardData {
         self.entity_input_scores.clear();
         self.consideration_scores.clear();
         self.decision_scores.clear();
-        self.consideration_input_scores.clear();
+        self.input_scores.clear();
     }
 }
 
@@ -145,7 +145,7 @@ pub(crate) fn record_input_scores(
         // add to consideration_input_scores if the entity is of the selected ai type
         if dashboard_data.entities.contains(&event.entity) {
             let scores_vec = dashboard_data
-                .consideration_input_scores
+                .input_scores
                 .entry(event.input.clone())
                 .or_insert(VecDeque::new());
 
@@ -186,7 +186,7 @@ pub(crate) fn record_consideration_scores(
                 .or_default();
 
             let scores_vec = entry
-                .entry((event.consideration_name.clone(), event.target))
+                .entry((event.consideration, event.target))
                 .or_insert(VecDeque::from_iter(vec![0.0; GRAPH_HISTORY_SIZE]));
 
             scores_vec.pop_back();

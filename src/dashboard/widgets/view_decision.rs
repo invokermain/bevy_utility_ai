@@ -106,7 +106,7 @@ impl<'w, 's> WidgetSystem for DecisionView<'w, 's> {
 
         let mut input_values: Vec<f32> = Vec::from_iter(
             dashboard_data
-                .consideration_input_scores
+                .input_scores
                 .get(&consideration.input_name)
                 .unwrap_or(&VecDeque::new())
                 .clone(),

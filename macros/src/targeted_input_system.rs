@@ -158,11 +158,11 @@ pub(crate) fn targeted_input_system(
             components: &bevy::ecs::component::Components
             #(, #extra_args)*
         ) {
-            let _span = bevy::prelude::debug_span!("Calculating Targeted Input", input = #quoted_name).entered();
+            let _span = bevy::prelude::debug_span!(target: "bevy_utility_ai", "Calculating Targeted Input", input = #quoted_name).entered();
             let key = bevy_utility_ai::utils::type_id_of(&#name);
 
             for (subject_entity_id, mut ai_meta #(, #subject_arg_names)*) in q_subject.iter_mut() {
-                let _span = bevy::prelude::debug_span!("", entity = subject_entity_id.index()).entered();
+                let _span = bevy::prelude::debug_span!(target: "bevy_utility_ai", "", entity = subject_entity_id.index()).entered();
 
                 let ai_definition = res_ai_definitions.map.get(&ai_meta.ai_definition).unwrap();
                 if !ai_definition.requires_targeted_input(&key) {
@@ -181,7 +181,7 @@ pub(crate) fn targeted_input_system(
                 #subject_data_line
 
                 for (target_entity_id #(, #target_arg_names)*) in q_target.iter() {
-                    let _span = bevy::prelude::debug_span!("", target_entity = target_entity_id.index()).entered();
+                    let _span = bevy::prelude::debug_span!(target: "bevy_utility_ai", "", target_entity = target_entity_id.index()).entered();
 
                     let matches_filters = {
                         match target_filter {
@@ -216,7 +216,7 @@ pub(crate) fn targeted_input_system(
                     let score = #body;
                     let entry = score_map.entry(target_entity_id).or_insert(f32::NEG_INFINITY);
                     *entry = score;
-                    bevy::prelude::debug!("score {:.2}", score);
+                    bevy::prelude::debug!(target: "bevy_utility_ai", "score {:.2}", score);
 
                     #[cfg(debug_assertions)]
                     event_writer.send(bevy_utility_ai::events::InputCalculatedEvent {

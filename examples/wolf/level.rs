@@ -15,6 +15,7 @@ use bevy_ecs_ldtk::{
 };
 use pathfinding::prelude::Grid;
 
+use crate::game::entities::shelter::ShelterBundle;
 use crate::game::entities::water_source::WaterSourceBundle;
 use crate::game::entities::wolf::WolfBundle;
 
@@ -107,7 +108,7 @@ fn spawn_game_entities(
                             transform: Transform::from_translation(Vec3::new(
                                 0.0, 8.0, 1.0,
                             ))
-                            .with_scale(Vec3::new(0.33, 0.33, 1.0)),
+                            .with_scale(Vec3::new(0.5, 0.5, 1.0)),
                             text_anchor: Anchor::BottomCenter,
                             ..default()
                         },
@@ -118,6 +119,10 @@ fn spawn_game_entities(
             commands
                 .entity(entity)
                 .insert(WaterSourceBundle::new(*transform));
+        } else if entity_instance.identifier == *"Shelter" {
+            commands
+                .entity(entity)
+                .insert(ShelterBundle::new(*transform));
         }
     }
 }

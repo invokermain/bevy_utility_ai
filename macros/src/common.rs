@@ -4,6 +4,7 @@ use syn::{Error, FnArg, Ident, PathSegment, Type};
 #[derive(Eq, PartialEq)]
 pub(crate) enum SigType {
     Component,
+    WrappedComponent,
     Extra,
     Entity,
 }
@@ -15,7 +16,7 @@ pub(crate) struct ParsedInput {
 }
 
 pub(crate) const UNEXPECTED_TYPE_ERR: &str =
-    "Expected the parameter type to be a reference, Res, ResMut or Query";
+    "Expected the parameter type to be a valid Query component, or of type Res, ResMut or Query";
 pub(crate) const REQUIRES_REFERENCE_ERR: &str = "Only Entity cannot be borrowed here";
 pub(crate) const ACCEPTED_EXTRA_SIGNATURE_TYPES: [&str; 3] = ["Res", "ResMut", "Query"];
 
@@ -57,10 +58,16 @@ pub(crate) fn parse_input(input: &FnArg) -> Result<ParsedInput, Error> {
                             (SigType::Extra, path.to_token_stream())
                         } else if &arg_type_str == "Entity" {
                             (SigType::Entity, path.to_token_stream())
+                        } else if &arg_type_str == "Option" {
+                            (SigType::WrappedComponent, path.to_token_stream())
                         } else {
+                            let mut err_str =
+                                format!("Unhandled parameter type '{}'. ", arg_type_str)
+                                    .to_string();
+                            err_str.push_str(UNEXPECTED_TYPE_ERR);
                             return Err(Error::new_spanned(
                                 arg.ty.clone().into_token_stream(),
-                                UNEXPECTED_TYPE_ERR.to_string(),
+                                err_str,
                             ));
                         }
                     } else {

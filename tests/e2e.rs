@@ -5,7 +5,7 @@ use bevy::prelude::{Entity, Res, Time, Vec2};
 use bevy_utility_ai::ai_meta::AIMeta;
 use bevy_utility_ai::considerations::Consideration;
 use bevy_utility_ai::decisions::Decision;
-use bevy_utility_ai::define_ai::DefineAI;
+use bevy_utility_ai::define_ai::DefineUtilityAI;
 use bevy_utility_ai::plugin::UtilityAIPlugin;
 use bevy_utility_ai::response_curves::Linear;
 use bevy_utility_ai::utils::type_id_of;
@@ -44,7 +44,7 @@ fn simple_considerations_trivial() {
     let mut app = test_app();
     app.add_plugins(UtilityAIPlugin::default());
 
-    DefineAI::<AI>::new()
+    DefineUtilityAI::<AI>::new()
         .add_decision(Decision::simple::<ActionOne>().add_consideration(
             Consideration::simple(utility_input_low).with_name("utility_input_low"),
         ))
@@ -89,13 +89,13 @@ fn calculate_inputs_calculates_only_for_required_entities() {
     let mut app = test_app();
     app.add_plugins(UtilityAIPlugin::default());
 
-    DefineAI::<AI1>::new()
+    DefineUtilityAI::<AI1>::new()
         .add_decision(Decision::simple::<ActionOne>().add_consideration(
             Consideration::simple(utility_input_1).with_name("utility_input_1"),
         ))
         .register(&mut app);
 
-    DefineAI::<AI2>::new()
+    DefineUtilityAI::<AI2>::new()
         .add_decision(Decision::simple::<ActionTwo>().add_consideration(
             Consideration::simple(utility_input_2).with_name("utility_input_2"),
         ))
@@ -143,7 +143,7 @@ fn targeted_trivial() {
     let mut app = test_app();
     app.add_plugins(UtilityAIPlugin::default());
 
-    DefineAI::<AI>::new()
+    DefineUtilityAI::<AI>::new()
         .add_decision(
             Decision::targeted::<ActionOne>().add_consideration(
                 Consideration::targeted(targeted_utility_input)
@@ -196,7 +196,7 @@ fn simple_considerations_respects_subject_filter() {
     let mut app = test_app();
     app.add_plugins(UtilityAIPlugin::default());
 
-    DefineAI::<AI>::new()
+    DefineUtilityAI::<AI>::new()
         .add_decision(
             Decision::simple::<ActionOne>()
                 .add_consideration(
@@ -231,7 +231,7 @@ fn simple_considerations_respects_subject_filter_two() {
     let mut app = test_app();
     app.add_plugins(UtilityAIPlugin::default());
 
-    DefineAI::<AI>::new()
+    DefineUtilityAI::<AI>::new()
         .add_decision(
             Decision::simple::<ActionOne>()
                 .add_consideration(
@@ -273,7 +273,7 @@ fn calculate_targeted_inputs_calculates_only_for_required_entities() {
     let mut app = test_app();
     app.add_plugins(UtilityAIPlugin::default());
 
-    DefineAI::<AI1>::new()
+    DefineUtilityAI::<AI1>::new()
         .add_decision(
             Decision::targeted::<ActionOne>().add_consideration(
                 Consideration::targeted(targeted_utility_input_1)
@@ -282,7 +282,7 @@ fn calculate_targeted_inputs_calculates_only_for_required_entities() {
         )
         .register(&mut app);
 
-    DefineAI::<AI2>::new()
+    DefineUtilityAI::<AI2>::new()
         .add_decision(
             Decision::targeted::<ActionOne>().add_consideration(
                 Consideration::targeted(targeted_utility_input_2)
@@ -343,7 +343,7 @@ fn calculate_targeted_inputs_respects_filters_trivial() {
     let mut app = test_app();
     app.add_plugins(UtilityAIPlugin::default());
 
-    DefineAI::<AI1>::new()
+    DefineUtilityAI::<AI1>::new()
         .add_decision(
             Decision::targeted::<ActionOne>()
                 .add_consideration(
@@ -405,7 +405,7 @@ fn calculate_targeted_inputs_respects_filters_complex() {
     let mut app = test_app();
     app.add_plugins(UtilityAIPlugin::default());
 
-    DefineAI::<AI1>::new()
+    DefineUtilityAI::<AI1>::new()
         .add_decision(
             Decision::targeted::<ActionOne>()
                 .add_consideration(
@@ -490,7 +490,7 @@ fn calculate_targeted_inputs_respects_filters_overlap() {
     let mut app = test_app();
     app.add_plugins(UtilityAIPlugin::default());
 
-    DefineAI::<AI1>::new()
+    DefineUtilityAI::<AI1>::new()
         .add_decision(
             Decision::targeted::<ActionOne>()
                 .add_consideration(
@@ -576,7 +576,7 @@ fn test_systems_with_extra_args() {
     let mut app = test_app();
     app.add_plugins(UtilityAIPlugin::default());
 
-    DefineAI::<AI1>::new().add_decision(
+    DefineUtilityAI::<AI1>::new().add_decision(
         Decision::targeted::<ActionOne>()
             .add_consideration(
                 Consideration::targeted(targeted_utility_input_1)
@@ -611,7 +611,7 @@ fn test_systems_with_entity_args() {
     let mut app = test_app();
     app.add_plugins(UtilityAIPlugin::default());
 
-    DefineAI::<AI1>::new().add_decision(
+    DefineUtilityAI::<AI1>::new().add_decision(
         Decision::targeted::<ActionOne>()
             .add_consideration(
                 Consideration::targeted(targeted_utility_input_1)

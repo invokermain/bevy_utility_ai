@@ -9,7 +9,7 @@ use bevy_utility_ai_macros::{input_system, targeted_input_system};
 use crate::game::entities::carrion::Meat;
 use crate::game::systems::drink::Thirst;
 use crate::game::systems::food::{Food, Hunger};
-use crate::game::systems::rest::Energy;
+use crate::game::systems::rest::{Energy, Fatigued};
 
 /// How much energy we have on a scale of 0.0 to 1.0
 #[input_system]
@@ -37,6 +37,12 @@ pub(crate) fn carcass_availability(
 ) -> f32 {
     let total_food: f32 = q_food.iter().map(|food| food.remaining).sum();
     (total_food - hunger.value).clamp(0.0, hunger.max) / hunger.max
+}
+
+// Is the entity asleep
+#[input_system]
+pub(crate) fn is_asleep(asleep: Option<&Fatigued>) -> f32 {
+    asleep.is_some() as u8 as f32
 }
 
 // Define targeted input systems, these are calculated for every combination of entity and

@@ -14,7 +14,7 @@ pub struct AIMeta {
     /// A map of the scores for each required targeted input for this AI, this is populated
     /// by the relevant input systems.
     pub targeted_input_scores: HashMap<TypeId, HashMap<Entity, f32>>,
-    /// The TypeId of this entities current action according to the AI.
+    /// The TypeId of this entity's current action according to the AI.
     pub current_action: Option<TypeId>,
     /// The score of the current action
     pub current_action_score: f32,

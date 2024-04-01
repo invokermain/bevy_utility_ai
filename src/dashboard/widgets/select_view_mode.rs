@@ -44,7 +44,7 @@ impl<'w> WidgetSystem for SelectViewMode<'w> {
             ui.selectable_value(
                 &mut dashboard_state.view_mode,
                 ViewMode::ResponseCurves,
-                "ResponseCurves",
+                "Response Curves",
             );
         });
         let pause_button = ui.button(match dashboard_state.paused {

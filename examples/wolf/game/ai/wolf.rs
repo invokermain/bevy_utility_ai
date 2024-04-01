@@ -3,7 +3,7 @@ use bevy::prelude::Component;
 
 use bevy_utility_ai::considerations::Consideration;
 use bevy_utility_ai::decisions::Decision;
-use bevy_utility_ai::define_ai::DefineAI;
+use bevy_utility_ai::define_ai::DefineUtilityAI;
 use bevy_utility_ai::response_curves::{Linear, PiecewiseLinear, Polynomial};
 
 use crate::game::ai::actions::{ActionEat, ActionHunt, ActionIdle, ActionRest};
@@ -13,7 +13,7 @@ use crate::game::systems::drink::Water;
 use crate::game::systems::hunt::IsPrey;
 
 use super::actions::ActionDrink;
-use super::inputs::thirst;
+use super::inputs::{is_asleep, thirst};
 
 // Define our AI Marker Component, if this is present on an entity it will enable the
 // corresponding AI behaviours.
@@ -24,32 +24,10 @@ pub struct HunterAI {}
 pub(crate) fn construct_hunter_ai(app: &mut App) {
     // use DefineAI to build a set of decisions that will be ran for any entity with
     // the HunterAI marker component added.
-    DefineAI::<HunterAI>::new()
+    DefineUtilityAI::<HunterAI>::new()
         // Add some intertia to our decisions so that we do not oscillate between
         // decisions.
         .set_default_intertia(0.1)
-        .add_decision(
-            // Rest..
-            Decision::simple::<ActionRest>()
-                // if we have low energy
-                .add_consideration(
-                    Consideration::simple(energy).with_response_curve(
-                        Polynomial::new(-3.0, 3.0).shifted(0.0, 1.0),
-                    ),
-                )
-                // and we have low hunger
-                .add_consideration(
-                    Consideration::simple(hunger).with_response_curve(
-                        Polynomial::new(-3.0, 3.0).shifted(0.0, 1.0),
-                    ),
-                )
-                // and we have low thirst
-                .add_consideration(
-                    Consideration::simple(thirst).with_response_curve(
-                        Polynomial::new(-3.0, 3.0).shifted(0.0, 1.0),
-                    ),
-                ),
-        )
         .add_decision(
             // Hunt...
             Decision::targeted::<ActionHunt>()
@@ -130,6 +108,24 @@ pub(crate) fn construct_hunter_ai(app: &mut App) {
                     Consideration::simple(thirst).with_response_curve(
                         Polynomial::new(-1.0, 2.0).shifted(0.0, 1.0),
                     ),
+                ),
+        )
+        .add_decision(
+            // Rest..
+            Decision::simple::<ActionRest>()
+                // if we have low energy
+                .add_consideration(
+                    Consideration::simple(energy).with_response_curve(
+                        Polynomial::new(-1.0, 2.0).shifted(0.0, 1.0),
+                    ),
+                )
+                // if we are asleep prefer to stay asleep (to make it 'sticky'),
+                // by changing the bounds we are in effect making this a multiplier for
+                // when our Wolf is alseep
+                .add_consideration(
+                    Consideration::simple(is_asleep)
+                        .with_response_curve(Linear::new(3.0))
+                        .with_bounds(1.0, 3.0),
                 ),
         )
         // registering against the app adds the input systems and actions we have used for

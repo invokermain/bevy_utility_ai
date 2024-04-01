@@ -29,8 +29,8 @@ pub fn drink(
         (Entity, &mut Thirst, &Transform, &ActionTarget),
         (With<ActionDrink>, Without<Water>, Without<Path>),
     >,
-    mut q_wolf_text: Query<&mut Text, With<WolfText>>,
     mut q_water: Query<&Transform, With<Water>>,
+    mut q_wolf_text: Query<&mut Text, With<WolfText>>,
     r_time: Res<Time>,
     mut ew_path_requested: EventWriter<PathRequested>,
 ) {
@@ -38,11 +38,11 @@ pub fn drink(
         if let Ok(water_transform) = q_water.get_mut(action_target.target) {
             let water_point = water_transform.translation.xy();
             let subject_point = transform.translation.xy();
-            let distance_to_water = subject_point.distance(water_point);
             // if we are near water drink
-            if distance_to_water <= 1.0 {
-                let portion_size = 20.0f32.min(subject_thirst.value);
-                subject_thirst.value -= portion_size * r_time.delta_seconds();
+            if subject_point.distance(water_point) <= 1.0 {
+                let portion_size =
+                    (20.0f32 * r_time.delta_seconds()).min(subject_thirst.value);
+                subject_thirst.value -= portion_size;
 
                 if let Ok(mut text) = q_wolf_text.get_single_mut() {
                     text.sections[0].value = "*slurp*".into();
@@ -56,8 +56,6 @@ pub fn drink(
                     speed: 2.0,
                 });
             }
-        } else {
-            continue;
         };
     }
 }

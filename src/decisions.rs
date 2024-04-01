@@ -2,6 +2,7 @@ use crate::considerations::{Consideration, ConsiderationType};
 use crate::utils::trim_type_name;
 use bevy::prelude::Component;
 use bevy::reflect::{GetTypeRegistration, TypeRegistration};
+use bevy::utils::Uuid;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use std::any::{type_name, TypeId};
@@ -24,6 +25,7 @@ impl Filter {
 }
 
 pub struct Decision {
+    pub(crate) id: Uuid,
     pub(crate) name: String,
     pub(crate) action_name: String,
     pub(crate) action: TypeId,
@@ -50,6 +52,7 @@ impl Decision {
         let tag: String = gen_random_tag().to_ascii_lowercase();
         let name = action_name.clone() + "_" + &tag;
         Self {
+            id: Uuid::new_v4(),
             name,
             action_name,
             action: TypeId::of::<C>(),

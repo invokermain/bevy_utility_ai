@@ -70,7 +70,7 @@ pub struct SpawnBird;
 impl Command for SpawnBird {
     fn apply(self, world: &mut World) {
         let mut rng = thread_rng();
-        let fly_to_point = random_pathable_point(&world.resource::<Walls>());
+        let fly_to_point = random_pathable_point(world.resource::<Walls>());
         world.resource_scope(|world: &mut World, asset_handles: Mut<BirdAssetHandles>| {
             let starting_point = random_point_on_edge_of_map();
             let end_point = starting_point
@@ -128,7 +128,7 @@ pub fn bird_movement(
                 let current_point = transform.translation.xy();
                 let target_point = movement_script.land_at;
                 let distance_to_target = target_point.distance(current_point);
-                if distance_to_target <= 1.0 {
+                if distance_to_target <= 0.1 {
                     commands
                         .entity(entity)
                         .insert((

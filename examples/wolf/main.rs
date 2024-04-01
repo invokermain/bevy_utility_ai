@@ -15,7 +15,7 @@ use game::entities::wolf::clear_wolf_text;
 use game::systems::drink::{drink, increase_thirst};
 use game::systems::hunt::hunt;
 use game::systems::pathfinding::{assign_path, follow_path, PathRequested};
-use game::systems::rest::{consume_energy, idle, rest};
+use game::systems::rest::{consume_energy, idle, on_idle_removed, on_rest_removed, rest};
 use ui::{
     energy_text_update_system, fps_text_update_system, hunger_text_update_system,
     setup_fps_counter, thirst_text_update_system,
@@ -57,7 +57,7 @@ fn main() {
         DefaultPlugins
             .set(LogPlugin {
                 // can change bevy_utility_ai to debug to see what's happening under the hood
-                filter: "warn,bevy_utility_ai=info,wolf=info".into(),
+                filter: "warn,bevy_utility_ai=info,wolf=debug".into(),
                 level: bevy::log::Level::INFO,
                 update_subscriber: None,
             })
@@ -120,21 +120,24 @@ fn main() {
         Update,
         (
             (
+                on_rest_removed,
+                on_idle_removed,
+                insert_idle_behaviour,
+                despawn_eaten_meat,
+            ),
+            (
                 hunt,
                 rest,
                 consume_energy,
                 increase_hunger,
                 increase_thirst,
                 eat,
-                insert_idle_behaviour,
                 idle,
                 drink,
-                despawn_eaten_meat,
                 bird_movement,
-                assign_path,
                 follow_path,
             ),
-            spawn_meat_on_kill,
+            (spawn_meat_on_kill, assign_path),
         )
             .chain(),
     );

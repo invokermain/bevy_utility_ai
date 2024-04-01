@@ -2,7 +2,6 @@ use crate::considerations::ConsiderationType;
 use crate::decisions::Filter;
 #[cfg(debug_assertions)]
 use crate::events::{ConsiderationCalculatedEvent, DecisionCalculatedEvent};
-use crate::response_curves::InputTransform;
 use crate::systems::update_action::UpdateEntityActionInternalEvent;
 use crate::{AIDefinitions, AIMeta, Decision};
 use bevy::ecs::archetype::{Archetype, Archetypes};
@@ -70,10 +69,8 @@ pub(crate) fn make_decisions_sys(
                         consideration.name
                     );
                 } else {
-                    let mut consideration_score = consideration
-                        .response_curve
-                        .transform(consideration_input_score)
-                        .clamp(0.0, 1.0);
+                    let mut consideration_score =
+                        consideration.calculate_score(consideration_input_score);
                     if consideration_score.is_nan() {
                         warn!(
                             "consideration {} response curve returned NaN for input {:.2}",
@@ -92,8 +89,8 @@ pub(crate) fn make_decisions_sys(
                     #[cfg(debug_assertions)]
                     ew_consideration_calculated.send(ConsiderationCalculatedEvent {
                         entity: entity_id,
-                        decision: decision.action_name.clone(),
-                        consideration_name: consideration.name.clone(),
+                        decision: decision.id,
+                        consideration: consideration.id,
                         target: None,
                         score: consideration_score,
                     });
@@ -109,7 +106,7 @@ pub(crate) fn make_decisions_sys(
                 #[cfg(debug_assertions)]
                 ew_decision_calculated.send(DecisionCalculatedEvent {
                     entity: entity_id,
-                    decision: decision.name.clone(),
+                    decision: decision.id,
                     target: None,
                     score: decision_score,
                 });
@@ -157,10 +154,8 @@ pub(crate) fn make_decisions_sys(
                         debug!("Skipped as target entity does not match target_filter");
                         continue;
                     }
-                    let consideration_score = consideration
-                        .response_curve
-                        .transform(consideration_input_score)
-                        .clamp(0.0, 1.0);
+                    let consideration_score =
+                        consideration.calculate_score(consideration_input_score);
                     debug!(
                         "Consideration '{}' for entity {:?} scored: {:.2} (raw {:.2})",
                         consideration.name,
@@ -172,8 +167,8 @@ pub(crate) fn make_decisions_sys(
                     #[cfg(debug_assertions)]
                     ew_consideration_calculated.send(ConsiderationCalculatedEvent {
                         entity: entity_id,
-                        decision: decision.name.clone(),
-                        consideration_name: consideration.name.clone(),
+                        decision: decision.id,
+                        consideration: consideration.id,
                         target: Some(target_entity_id),
                         score: consideration_score,
                     });
@@ -203,7 +198,7 @@ pub(crate) fn make_decisions_sys(
                 #[cfg(debug_assertions)]
                 ew_decision_calculated.send(DecisionCalculatedEvent {
                     entity: entity_id,
-                    decision: decision.name.clone(),
+                    decision: decision.id,
                     target: Some(entity),
                     score: targeted_decision_score,
                 });

@@ -17,9 +17,9 @@ use bevy::{
 use std::any::{type_name, TypeId};
 use std::marker::PhantomData;
 
-/// A builder which allows you declaratively specify your AI
-/// and returns a bundle that you can add to an entity.
-pub struct DefineAI<T: Component> {
+/// A builder which allows you declaratively build your UtilityAI, where the AI is defined as a
+/// set of Decisions. and returns a bundle that you can add to an entity.
+pub struct DefineUtilityAI<T: Component> {
     /// The AI Set's name.
     name: String,
     /// The decisions that make up this AI's logic, passed to AIDefinition on register.
@@ -35,8 +35,8 @@ pub struct DefineAI<T: Component> {
     schedule_label: Option<InternedScheduleLabel>,
 }
 
-impl<T: Component> DefineAI<T> {
-    pub fn new() -> DefineAI<T> {
+impl<T: Component> DefineUtilityAI<T> {
+    pub fn new() -> DefineUtilityAI<T> {
         Self {
             name: trim_type_name(type_name::<T>()).into(),
             marker_phantom: PhantomData,
@@ -49,7 +49,7 @@ impl<T: Component> DefineAI<T> {
         }
     }
 
-    pub fn add_decision(mut self, decision: Decision) -> DefineAI<T> {
+    pub fn add_decision(mut self, decision: Decision) -> DefineUtilityAI<T> {
         for consideration in &decision.considerations {
             match consideration.consideration_type {
                 ConsiderationType::Simple => {
@@ -84,12 +84,12 @@ impl<T: Component> DefineAI<T> {
         self
     }
 
-    pub fn use_schedule(mut self, schedule: impl ScheduleLabel) -> DefineAI<T> {
+    pub fn use_schedule(mut self, schedule: impl ScheduleLabel) -> DefineUtilityAI<T> {
         self.schedule_label = Some(schedule.intern());
         self
     }
 
-    pub fn set_default_intertia(mut self, value: f32) -> DefineAI<T> {
+    pub fn set_default_intertia(mut self, value: f32) -> DefineUtilityAI<T> {
         if !(0.0..1.0).contains(&value) {
             panic!("value must be between =0.0 and 1.0");
         }
@@ -169,9 +169,9 @@ impl<T: Component> DefineAI<T> {
     }
 }
 
-impl<T: Component> Default for DefineAI<T> {
+impl<T: Component> Default for DefineUtilityAI<T> {
     fn default() -> Self {
-        DefineAI::<T>::new()
+        DefineUtilityAI::<T>::new()
     }
 }
 
