@@ -1,22 +1,24 @@
-use bevy::asset::AssetServer;
-use bevy::ecs::bundle::Bundle;
-use bevy::ecs::system::Res;
-use bevy::math::Vec2;
-use bevy::prelude::*;
-use bevy::sprite::SpriteSheetBundle;
+use bevy::{
+    asset::AssetServer,
+    ecs::{bundle::Bundle, system::Res},
+    prelude::*,
+};
 use bevy_utility_ai::systems::make_decisions::EntityActionChangedEvent;
 use rand::{thread_rng, Rng};
 
-use crate::game::ai::wolf::HunterAI;
-use crate::game::systems::drink::Thirst;
-use crate::game::systems::food::Hunger;
-use crate::game::systems::rest::Energy;
-use crate::level::WolfText;
-use crate::utils::animations::{AnimationIndices, AnimationTimer};
+use crate::{
+    game::{
+        ai::wolf::HunterAI,
+        systems::{drink::Thirst, food::Hunger, rest::Energy},
+    },
+    level::WolfText,
+    utils::animations::{AnimationIndices, AnimationTimer},
+};
 
 #[derive(Bundle)]
 pub struct WolfBundle {
-    sprite: SpriteSheetBundle,
+    sprite: SpriteBundle,
+    texture_atlas: TextureAtlas,
     animation_indices: AnimationIndices,
     animation_timer: AnimationTimer,
     hunger: Hunger,
@@ -33,19 +35,18 @@ impl WolfBundle {
     ) -> Self {
         let mut rng = thread_rng();
         let texture = asset_server.load("wolf.png");
-        let layout =
-            TextureAtlasLayout::from_grid(Vec2::new(16.0, 16.0), 4, 1, None, None);
+        let layout = TextureAtlasLayout::from_grid(UVec2::new(16, 16), 4, 1, None, None);
         let texture_atlas_layout = texture_atlas_layouts.add(layout);
         let animation_indices = AnimationIndices { first: 0, last: 3 };
         Self {
-            sprite: SpriteSheetBundle {
+            sprite: SpriteBundle {
                 texture,
                 transform,
-                atlas: TextureAtlas {
-                    layout: texture_atlas_layout,
-                    index: animation_indices.first,
-                },
                 ..default()
+            },
+            texture_atlas: TextureAtlas {
+                layout: texture_atlas_layout,
+                index: animation_indices.first,
             },
             animation_indices,
             animation_timer: AnimationTimer(Timer::from_seconds(

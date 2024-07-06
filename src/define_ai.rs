@@ -1,21 +1,23 @@
-use crate::considerations::ConsiderationType;
-use crate::decisions::Decision;
-use crate::plugin::{UtilityAISet, UtilityAISettings};
-use crate::systems::{ensure_entity_has_ai_meta, handle_ai_marker_removed};
-use crate::{AIDefinition, AIDefinitions, FilterDefinition, TargetedInputRequirements};
+use crate::{
+    considerations::ConsiderationType,
+    decisions::Decision,
+    plugin::{UtilityAISet, UtilityAISettings},
+    systems::{ensure_entity_has_ai_meta, handle_ai_marker_removed},
+    AIDefinition, AIDefinitions, FilterDefinition, TargetedInputRequirements,
+};
 use bevy::ecs::schedule::{InternedScheduleLabel, ScheduleLabel};
 
 use crate::utils::trim_type_name;
-use bevy::prelude::{AppTypeRegistry, IntoSystemConfigs};
 use bevy::{
     app::App,
-    prelude::Component,
-    prelude::Resource,
+    prelude::{AppTypeRegistry, Component, IntoSystemConfigs, Resource},
     reflect::TypeRegistration,
     utils::{HashMap, HashSet},
 };
-use std::any::{type_name, TypeId};
-use std::marker::PhantomData;
+use std::{
+    any::{type_name, TypeId},
+    marker::PhantomData,
+};
 
 /// A builder which allows you declaratively build your UtilityAI, where the AI is defined as a
 /// set of Decisions. and returns a bundle that you can add to an entity.
@@ -104,7 +106,7 @@ impl<T: Component> DefineUtilityAI<T> {
         // the app to track systems that are already added.
         {
             let mut added_systems = app
-                .world
+                .world_mut()
                 .remove_resource::<AddedSystemTracker>()
                 .unwrap_or_else(|| {
                     panic!("Make sure the plugin is added to the app before calls to DefineAI")
@@ -112,7 +114,7 @@ impl<T: Component> DefineUtilityAI<T> {
 
             let schedule_label = self
                 .schedule_label
-                .unwrap_or(app.world.resource::<UtilityAISettings>().default_schedule);
+                .unwrap_or(app.world().resource::<UtilityAISettings>().default_schedule);
 
             app.add_systems(
                 schedule_label,
@@ -136,20 +138,20 @@ impl<T: Component> DefineUtilityAI<T> {
                 });
             }
 
-            app.world.insert_resource(added_systems);
+            app.world_mut().insert_resource(added_systems);
         }
 
         // Register actions with the AppTypeRegistry
         {
-            let registry = app.world.resource_mut::<AppTypeRegistry>();
+            let registry = app.world_mut().resource_mut::<AppTypeRegistry>();
             let mut registry_write = registry.write();
-            self.action_type_registrations
-                .into_iter()
-                .for_each(|f| registry_write.add_registration(f));
+            self.action_type_registrations.into_iter().for_each(|f| {
+                registry_write.add_registration(f);
+            });
         }
 
         // Add the AIDefinition to the AIDefinitions resource
-        let mut ai_definitions = app.world.resource_mut::<AIDefinitions>();
+        let mut ai_definitions = app.world_mut().resource_mut::<AIDefinitions>();
 
         if !ai_definitions.map.contains_key(&TypeId::of::<T>()) {
             let ai_definition = AIDefinition {

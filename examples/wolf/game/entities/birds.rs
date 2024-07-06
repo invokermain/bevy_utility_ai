@@ -1,14 +1,20 @@
-use crate::game::systems::hunt::IsPrey;
-use crate::game::systems::pathfinding::{
-    random_pathable_point, random_point_on_edge_of_map,
+use crate::{
+    game::systems::{
+        hunt::IsPrey,
+        pathfinding::{random_pathable_point, random_point_on_edge_of_map},
+    },
+    level::{Walls, GRID_SIZE, MAP_SIZE},
+    utils::animations::{AnimationIndices, AnimationTimer},
 };
-use crate::level::{Walls, GRID_SIZE, MAP_SIZE};
-use crate::utils::animations::{AnimationIndices, AnimationTimer};
-use bevy::asset::AssetServer;
-use bevy::ecs::system::{Command, Res};
-use bevy::math::Vec2;
-use bevy::prelude::*;
-use bevy::sprite::SpriteSheetBundle;
+use bevy::{
+    asset::AssetServer,
+    ecs::{
+        system::{Commands, Res},
+        world::Command,
+    },
+    math::Vec2,
+    prelude::*,
+};
 use rand::{thread_rng, Rng};
 
 #[derive(Copy, Clone)]
@@ -43,11 +49,11 @@ pub fn load_bird_assets(
     *r_bird_assets = BirdAssetHandles {
         image: r_asset_server.load("pigeons.png"),
         flying_texture_layout: r_texture_atlas_layout.add(TextureAtlasLayout::from_grid(
-            Vec2::new(16.0, 16.0),
+            UVec2::new(16, 16),
             3,
             1,
             None,
-            Some(Vec2::new(0.0, 16.0)),
+            Some(UVec2::new(0, 16)),
         )),
         flying_animation: (
             AnimationIndices { first: 0, last: 2 },
@@ -55,11 +61,11 @@ pub fn load_bird_assets(
         ),
         resting_texture_layout: r_texture_atlas_layout.add(
             TextureAtlasLayout::from_grid(
-                Vec2::new(16.0, 16.0),
+                UVec2::new(16, 16),
                 1,
                 1,
                 None,
-                Some(Vec2::new(64.0, 16.0)),
+                Some(UVec2::new(64, 16)),
             ),
         ),
     }
@@ -78,16 +84,16 @@ impl Command for SpawnBird {
             let entity_layer: f32 = 8.0;
 
             world.spawn((
-                SpriteSheetBundle {
+                SpriteBundle {
                     texture: asset_handles.image.clone(),
                     transform: Transform::from_translation(
                         starting_point.extend(entity_layer),
                     ),
-                    atlas: TextureAtlas {
-                        layout: asset_handles.flying_texture_layout.clone(),
-                        index: 0,
-                    },
                     ..default()
+                },
+                TextureAtlas {
+                    layout: asset_handles.flying_texture_layout.clone(),
+                    index: 0,
                 },
                 BirdScriptedMovement {
                     start_at: starting_point,

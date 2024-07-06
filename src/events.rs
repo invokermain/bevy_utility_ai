@@ -1,5 +1,5 @@
 use bevy::prelude::{Entity, Event};
-use bevy::utils::Uuid;
+use uuid::Uuid;
 
 #[derive(Event)]
 pub struct InputCalculatedEvent {

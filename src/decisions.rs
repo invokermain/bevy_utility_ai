@@ -1,11 +1,14 @@
-use crate::considerations::{Consideration, ConsiderationType};
-use crate::utils::trim_type_name;
-use bevy::prelude::Component;
-use bevy::reflect::{GetTypeRegistration, TypeRegistration};
-use bevy::utils::Uuid;
-use rand::distributions::Alphanumeric;
-use rand::Rng;
+use crate::{
+    considerations::{Consideration, ConsiderationType},
+    utils::trim_type_name,
+};
+use bevy::{
+    prelude::Component,
+    reflect::{GetTypeRegistration, TypeRegistration},
+};
+use rand::{distributions::Alphanumeric, Rng};
 use std::any::{type_name, TypeId};
+use uuid::Uuid;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Filter {

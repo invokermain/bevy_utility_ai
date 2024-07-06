@@ -1,36 +1,50 @@
 use std::time::Duration;
 
-use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
-use bevy::log::LogPlugin;
-use bevy::prelude::*;
-use bevy::window::WindowResolution;
+use bevy::{
+    diagnostic::FrameTimeDiagnosticsPlugin, log::LogPlugin, prelude::*,
+    window::WindowResolution,
+};
 use bevy_ecs_ldtk::LdtkPlugin;
 use bevy_egui::EguiPlugin;
 
-use bevy_utility_ai::dashboard::UtilityAIDashboardPlugin;
-use bevy_utility_ai::plugin::{UtilityAIPlugin, UtilityAISet};
-use bevy_utility_ai::systems::make_decisions::EntityActionChangedEvent;
-use game::entities::carrion::{despawn_eaten_meat, spawn_meat_on_kill};
-use game::entities::wolf::clear_wolf_text;
-use game::systems::drink::{drink, increase_thirst};
-use game::systems::hunt::hunt;
-use game::systems::pathfinding::{assign_path, follow_path, PathRequested};
-use game::systems::rest::{consume_energy, idle, on_idle_removed, on_rest_removed, rest};
+use bevy_utility_ai::{
+    dashboard::UtilityAIDashboardPlugin,
+    plugin::{UtilityAIPlugin, UtilityAISet},
+    systems::make_decisions::EntityActionChangedEvent,
+};
+use game::{
+    entities::{
+        carrion::{despawn_eaten_meat, spawn_meat_on_kill},
+        wolf::clear_wolf_text,
+    },
+    systems::{
+        drink::{drink, increase_thirst},
+        hunt::hunt,
+        pathfinding::{assign_path, follow_path, PathRequested},
+        rest::{consume_energy, idle, on_idle_removed, on_rest_removed, rest},
+    },
+};
 use ui::{
     energy_text_update_system, fps_text_update_system, hunger_text_update_system,
     setup_fps_counter, thirst_text_update_system,
 };
 use utils::animations::animate_sprite;
 
-use crate::game::ai::wolf::construct_hunter_ai;
-use crate::game::entities::birds::{
-    bird_movement, load_bird_assets, spawn_birds_occasionally, BirdAssetHandles,
+use crate::{
+    game::{
+        ai::wolf::construct_hunter_ai,
+        entities::birds::{
+            bird_movement, load_bird_assets, spawn_birds_occasionally, BirdAssetHandles,
+        },
+        systems::{
+            food::{eat, increase_hunger},
+            hunt::PreyKilledEvent,
+            rest::insert_idle_behaviour,
+        },
+    },
+    level::WolfSceneSetupPlugin,
+    ui::action_text_update_system,
 };
-use crate::game::systems::food::{eat, increase_hunger};
-use crate::game::systems::hunt::PreyKilledEvent;
-use crate::game::systems::rest::insert_idle_behaviour;
-use crate::level::WolfSceneSetupPlugin;
-use crate::ui::action_text_update_system;
 
 mod game;
 mod layers;
@@ -49,7 +63,7 @@ fn log_ai_updated_action(mut e_update_action: EventReader<EntityActionChangedEve
     }
 }
 
-fn main() {
+fn main() -> AppExit {
     let mut app = App::new();
 
     // Set up the App
@@ -59,7 +73,7 @@ fn main() {
                 // can change bevy_utility_ai to debug to see what's happening under the hood
                 filter: "warn,bevy_utility_ai=info,wolf=debug".into(),
                 level: bevy::log::Level::INFO,
-                update_subscriber: None,
+                ..default()
             })
             .set(WindowPlugin {
                 primary_window: Some(Window {

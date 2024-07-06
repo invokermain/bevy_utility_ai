@@ -1,15 +1,17 @@
-use crate::dashboard::view::DashboardState;
-use crate::dashboard::view_models::ViewAIDefinition;
-use crate::events::{
-    ConsiderationCalculatedEvent, DecisionCalculatedEvent, InputCalculatedEvent,
+use crate::{
+    dashboard::{view::DashboardState, view_models::ViewAIDefinition},
+    events::{
+        ConsiderationCalculatedEvent, DecisionCalculatedEvent, InputCalculatedEvent,
+    },
+    AIDefinitions,
 };
-use crate::AIDefinitions;
-use bevy::ecs::archetype::Archetypes;
-use bevy::ecs::component::Components;
-use bevy::prelude::{Entity, EventReader, Local, Res, ResMut, Resource};
-use bevy::utils::{HashMap, Uuid};
-use std::any::TypeId;
-use std::collections::VecDeque;
+use bevy::{
+    ecs::{archetype::Archetypes, component::Components},
+    prelude::{Entity, EventReader, Local, Res, ResMut, Resource},
+    utils::HashMap,
+};
+use std::{any::TypeId, collections::VecDeque};
+use uuid::Uuid;
 
 #[derive(Resource, Default)]
 pub(crate) struct DashboardData {

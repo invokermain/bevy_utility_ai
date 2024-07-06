@@ -1,3 +1,15 @@
+use std::{any::TypeId, fmt::Debug};
+
+use bevy::{
+    prelude::{Component, Entity, Resource},
+    utils::{HashMap, HashSet},
+};
+
+pub use bevy_utility_ai_macros::{input_system, targeted_input_system};
+
+pub use crate::ai_meta::AIMeta;
+use crate::decisions::{Decision, Filter};
+
 pub mod ai_meta;
 pub mod considerations;
 pub mod decisions;
@@ -10,18 +22,6 @@ pub mod utils;
 #[cfg(feature = "dashboard")]
 pub mod dashboard;
 pub mod events;
-
-pub use bevy_utility_ai_macros::{input_system, targeted_input_system};
-
-pub use crate::ai_meta::AIMeta;
-use std::any::TypeId;
-use std::fmt::Debug;
-
-use crate::decisions::{Decision, Filter};
-use bevy::{
-    prelude::{Component, Entity, Resource},
-    utils::{HashMap, HashSet},
-};
 
 #[derive(Debug)]
 pub enum FilterDefinition {

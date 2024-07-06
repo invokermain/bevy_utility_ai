@@ -1,14 +1,16 @@
-use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
-use bevy::hierarchy::BuildChildren;
-use bevy::prelude::*;
-use bevy::ui::FlexDirection;
+use bevy::{
+    diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
+    hierarchy::BuildChildren,
+    prelude::*,
+    ui::FlexDirection,
+};
 
 use bevy_utility_ai::AIMeta;
 
-use crate::game::ai::wolf::HunterAI;
-use crate::game::systems::drink::Thirst;
-use crate::game::systems::food::Hunger;
-use crate::game::systems::rest::Energy;
+use crate::game::{
+    ai::wolf::HunterAI,
+    systems::{drink::Thirst, food::Hunger, rest::Energy},
+};
 
 #[derive(Component)]
 pub struct FpsRoot;
@@ -39,7 +41,7 @@ pub fn setup_fps_counter(mut commands: Commands) {
         .spawn((
             FpsRoot,
             NodeBundle {
-                background_color: BackgroundColor(Color::BLACK.with_a(0.5)),
+                background_color: BackgroundColor(Color::BLACK.with_alpha(0.5)),
                 z_index: ZIndex::Global(i32::MAX),
                 style: Style {
                     flex_direction: FlexDirection::Column,

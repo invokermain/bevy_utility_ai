@@ -1,11 +1,14 @@
-use crate::dashboard::data::{DashboardData, GRAPH_HISTORY_SIZE};
-use crate::dashboard::view::DashboardState;
-use bevy::ecs::system::{Res, SystemParam, SystemState};
-use bevy::ecs::world::World;
+use super::base::WidgetSystem;
+use crate::dashboard::{
+    data::{DashboardData, GRAPH_HISTORY_SIZE},
+    view::DashboardState,
+};
+use bevy::ecs::{
+    system::{Res, SystemParam, SystemState},
+    world::World,
+};
 use bevy_egui::egui::Ui;
 use egui_plot::{Corner, Legend, Line, Plot, PlotBounds, PlotPoints};
-
-use super::base::WidgetSystem;
 
 #[derive(SystemParam)]
 pub(crate) struct DecisionScoresPlot<'w> {

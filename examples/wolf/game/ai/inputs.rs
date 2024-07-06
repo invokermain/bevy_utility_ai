@@ -1,15 +1,21 @@
-// Define simple input system, this input is calculated for each entity that has the
-// required components.
-
-use bevy::ecs::query::With;
-use bevy::prelude::{Query, Transform};
+use bevy::{
+    ecs::query::With,
+    prelude::{Query, Transform},
+};
 
 use bevy_utility_ai_macros::{input_system, targeted_input_system};
 
-use crate::game::entities::carrion::Meat;
-use crate::game::systems::drink::Thirst;
-use crate::game::systems::food::{Food, Hunger};
-use crate::game::systems::rest::{Energy, Fatigued};
+use crate::game::{
+    entities::carrion::Meat,
+    systems::{
+        drink::Thirst,
+        food::{Food, Hunger},
+        rest::{Energy, Fatigued},
+    },
+};
+
+// Define simple input system, this input is calculated for each entity that has the
+// required components.
 
 /// How much energy we have on a scale of 0.0 to 1.0
 #[input_system]

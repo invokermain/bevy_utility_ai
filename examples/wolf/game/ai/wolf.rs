@@ -1,19 +1,25 @@
-use bevy::app::App;
-use bevy::prelude::Component;
+use bevy::{app::App, prelude::Component};
 
-use bevy_utility_ai::considerations::Consideration;
-use bevy_utility_ai::decisions::Decision;
-use bevy_utility_ai::define_ai::DefineUtilityAI;
-use bevy_utility_ai::response_curves::{Linear, PiecewiseLinear, Polynomial};
+use bevy_utility_ai::{
+    considerations::Consideration,
+    decisions::Decision,
+    define_ai::DefineUtilityAI,
+    response_curves::{Linear, PiecewiseLinear, Polynomial},
+};
 
-use crate::game::ai::actions::{ActionEat, ActionHunt, ActionIdle, ActionRest};
-use crate::game::ai::inputs::{distance_to, energy, hunger};
-use crate::game::entities::carrion::Meat;
-use crate::game::systems::drink::Water;
-use crate::game::systems::hunt::IsPrey;
+use crate::game::{
+    ai::{
+        actions::{ActionEat, ActionHunt, ActionIdle, ActionRest},
+        inputs::{distance_to, energy, hunger},
+    },
+    entities::carrion::Meat,
+    systems::{drink::Water, hunt::IsPrey},
+};
 
-use super::actions::ActionDrink;
-use super::inputs::{is_asleep, thirst};
+use super::{
+    actions::ActionDrink,
+    inputs::{is_asleep, thirst},
+};
 
 // Define our AI Marker Component, if this is present on an entity it will enable the
 // corresponding AI behaviours.
@@ -22,7 +28,7 @@ pub struct HunterAI {}
 
 // Declare our hunter's behaviour
 pub(crate) fn construct_hunter_ai(app: &mut App) {
-    // use DefineAI to build a set of decisions that will be ran for any entity with
+    // use DefineAI to build a set of decisions that will be run for any entity with
     // the HunterAI marker component added.
     DefineUtilityAI::<HunterAI>::new()
         // Add some intertia to our decisions so that we do not oscillate between

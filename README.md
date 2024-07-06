@@ -1,7 +1,8 @@
-
 # bevy_utility_ai
 
-This crate provides a Utility AI implementation for the bevy game engine.
+`bevy_utility_ai` is a Utility AI framework designed for the [Bevy](https://bevyengine.org/) game engine.
+
+It features a simple declarative interface
 
 ## Example
 

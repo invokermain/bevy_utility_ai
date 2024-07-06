@@ -1,10 +1,7 @@
-use crate::game::systems::food::Food;
-use crate::game::systems::hunt::PreyKilledEvent;
-use bevy::asset::{AssetServer, Assets};
-use bevy::math::Vec2;
-use bevy::prelude::{
-    default, Color, Commands, Component, Entity, EventReader, Query, Res, ResMut, Sprite,
-    SpriteSheetBundle, TextureAtlas, TextureAtlasLayout, Transform, With,
+use crate::game::systems::{food::Food, hunt::PreyKilledEvent};
+use bevy::{
+    asset::{AssetServer, Assets},
+    prelude::*,
 };
 use rand::{thread_rng, Rng};
 use std::f32::consts::PI;
@@ -27,24 +24,24 @@ pub fn spawn_meat_on_kill(
         commands.spawn((
             Food::new(25.0),
             Meat::default(),
-            SpriteSheetBundle {
+            SpriteBundle {
                 sprite: Sprite {
-                    color: Color::rgb(0.9, 0.9, 0.9),
+                    color: Color::srgb(0.9, 0.9, 0.9),
                     ..default()
                 },
                 texture: r_asset_server.load("pigeons.png"),
-                atlas: TextureAtlas {
-                    layout: r_texture_atlas_layout.add(TextureAtlasLayout::from_grid(
-                        Vec2::new(16.0, 16.0),
-                        1,
-                        1,
-                        None,
-                        Some(Vec2::new(0.0, 16.0)),
-                    )),
-                    index: 0,
-                },
                 transform,
                 ..default()
+            },
+            TextureAtlas {
+                layout: r_texture_atlas_layout.add(TextureAtlasLayout::from_grid(
+                    UVec2::new(16, 16),
+                    1,
+                    1,
+                    None,
+                    Some(UVec2::new(0, 16)),
+                )),
+                index: 0,
             },
         ));
     }

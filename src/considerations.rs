@@ -1,9 +1,10 @@
-use crate::response_curves::{InputTransform, Linear, ResponseCurve};
-use crate::utils;
-use bevy::ecs::schedule::SystemConfigs;
-use bevy::prelude::IntoSystemConfigs;
-use bevy::utils::Uuid;
+use crate::{
+    response_curves::{InputTransform, Linear, ResponseCurve},
+    utils,
+};
+use bevy::{ecs::schedule::SystemConfigs, prelude::IntoSystemConfigs};
 use std::any::TypeId;
+use uuid::Uuid;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum ConsiderationType {
