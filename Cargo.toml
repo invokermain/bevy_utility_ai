@@ -1,0 +1,40 @@
+[package]
+name = "bevy_utility_ai"
+version = "0.0.0"
+edition = "2021"
+description = "A Utility AI library for the Bevy game engine"
+
+[workspace]
+members = ["macros"]
+
+# Enable max optimizations for dependencies, but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
+
+# Enable only a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+[dependencies]
+bevy_utility_ai_macros = { path = "macros" }
+bevy = { version = "0.14", default-features = false }
+bevy_egui = { version = "^0.28", optional = true }
+egui_plot = { version = "^0.28", optional = true }
+rand = { version = "^0.8", features = [] }
+uuid = { version = "1.7", features = ["v4"] }
+
+[features]
+dashboard = ["dep:bevy_egui", "dep:egui_plot"]
+
+[dev-dependencies]
+trybuild = "1"
+# this ensures we have the dashboard features in tests
+bevy_utility_ai = { path = ".", features = ["dashboard"] }
+bevy = { version = "*" }
+# used for the wolf example
+bevy_ecs_ldtk = { git = "https://github.com/MScottMcBee/bevy_ecs_ldtk.git", branch = "0.14" }
+pathfinding = "^4"
+
+[lints.clippy]
+type_complexity = "allow"
+too_many_arguments = "allow"
